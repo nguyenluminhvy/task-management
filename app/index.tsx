@@ -9,6 +9,8 @@ import {
 import {collection, getDocs, getFirestore} from "@firebase/firestore";
 import app from "@/app/config/firebaseConfig";
 import {useEffect, useState} from "react";
+import * as Notifications from "expo-notifications";
+import {useNotifications} from "@/app/hooks/useNotification";
 
 
 const auth = getAuth(app);
@@ -25,10 +27,13 @@ async function getCities(db) {
 
 // await getCities(db)
 
+
 export default function Index() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [user, setUser] = useState(null);
+
+  const {scheduleNotificationAsync, cancelNotificationAsync, sendPushNotification, expoPushToken} = useNotifications();
 
   useEffect(() => {
     console.log(auth, 'auth <<<')
@@ -38,6 +43,29 @@ export default function Index() {
     // getCities(db).then()
   }, [])
 
+  useEffect(() => {
+    const configureNotificationsAsync = async () => {
+      const { granted } = await Notifications.requestPermissionsAsync();
+      if (!granted) {
+        return console.warn("⚠️ Notification Permissions not granted!");
+      }
+    };
+    configureNotificationsAsync();
+  }, []);
+
+  const sendNotification = () => {
+    scheduleNotificationAsync({
+      content: {
+        title: "🧪 Test notification!",
+        body: 'this is body',
+        subtitle: 'this is subtitle',
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 5,
+      },
+    });
+  };
 
 
   onAuthStateChanged(auth, (user) => {
@@ -143,6 +171,19 @@ export default function Index() {
         <Button title="Sign In" onPress={signIn} />
         <Button title="Sign Out" onPress={signOut} />
         {user && <Text>Welcome, {user.email}</Text>}
+        {<Text>expoPushToken, {expoPushToken}</Text>}
+
+
+        <Button
+          title="Send me a notification"
+          onPress={sendNotification}
+        ></Button>
+        <Button
+          title="Send me a notification 2222"
+          onPress={sendPushNotification}
+        ></Button>
+        <Button title="Cancel notification" onPress={cancelNotificationAsync} />
+
       </View>
     </View>
   );
