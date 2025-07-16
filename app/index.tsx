@@ -2,7 +2,6 @@ import {Alert, Button, FlatList, Text, TextInput, View} from "react-native";
 import {useAuth} from "@/lib/context/AuthContext";
 import {TaskCategory, TaskPriority, TaskStatus} from "@/lib/constants/task";
 import {useTasks} from "@/lib/hooks/useTasks";
-import {Button, Text, TextInput, View} from "react-native";
 import {useEffect, useState} from "react";
 import * as Notifications from "expo-notifications";
 import {useNotifications} from "@/app/hooks/useNotification";
@@ -103,15 +102,6 @@ export default function Index() {
         />
         <Button title="Add Task" onPress={handleAdd} />
 
-        <FlatList
-          data={tasks}
-          keyExtractor={(item) => item.id!}
-          renderItem={({ item }) => <View>
-           <Text>
-             {JSON.stringify(item)}
-           </Text>
-          </View>}
-        />
         {<Text>expoPushToken, {expoPushToken}</Text>}
 
 
@@ -124,6 +114,17 @@ export default function Index() {
           onPress={sendPushNotification}
         ></Button>
         <Button title="Cancel notification" onPress={cancelNotificationAsync} />
+
+        <FlatList
+          data={tasks}
+          keyExtractor={(item) => item.id!}
+          renderItem={({ item }) => <View>
+           <Text>
+             {JSON.stringify(item)}
+           </Text>
+          </View>}
+        />
+
 
       </View>
     </View>
