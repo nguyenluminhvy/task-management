@@ -1,18 +1,47 @@
 import {Alert, Button, FlatList, Text, TextInput, View} from "react-native";
-import {useState} from "react";
 import {useAuth} from "@/lib/context/AuthContext";
 import {TaskCategory, TaskPriority, TaskStatus} from "@/lib/constants/task";
 import {useTasks} from "@/lib/hooks/useTasks";
+import {useEffect, useState} from "react";
+import * as Notifications from "expo-notifications";
+import {useNotifications} from "@/app/hooks/useNotification";
+
+
 
 
 export default function Index() {
   const { user, signIn, signUp, signOut } = useAuth()
   const { tasks, addTask } = useTasks()
 
+  const {scheduleNotificationAsync, cancelNotificationAsync, sendPushNotification, expoPushToken} = useNotifications();
+
   const [email, setEmail] = useState<string>('admin@admin.com');
   const [password, setPassword] = useState<string>('123456');
 
   const [title, setTitle] = useState('');
+  useEffect(() => {
+    const configureNotificationsAsync = async () => {
+      const { granted } = await Notifications.requestPermissionsAsync();
+      if (!granted) {
+        return console.warn("⚠️ Notification Permissions not granted!");
+      }
+    };
+    configureNotificationsAsync();
+  }, []);
+
+  const sendNotification = () => {
+    scheduleNotificationAsync({
+      content: {
+        title: "🧪 Test notification!",
+        body: 'this is body',
+        subtitle: 'this is subtitle',
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 5,
+      },
+    });
+  };
 
   const handleAdd = async () => {
     if (!user) return;
@@ -73,6 +102,19 @@ export default function Index() {
         />
         <Button title="Add Task" onPress={handleAdd} />
 
+        {<Text>expoPushToken, {expoPushToken}</Text>}
+
+
+        <Button
+          title="Send me a notification"
+          onPress={sendNotification}
+        ></Button>
+        <Button
+          title="Send me a notification 2222"
+          onPress={sendPushNotification}
+        ></Button>
+        <Button title="Cancel notification" onPress={cancelNotificationAsync} />
+
         <FlatList
           data={tasks}
           keyExtractor={(item) => item.id!}
@@ -82,6 +124,8 @@ export default function Index() {
            </Text>
           </View>}
         />
+
+
       </View>
     </View>
   );
