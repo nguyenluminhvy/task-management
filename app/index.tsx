@@ -1,48 +1,25 @@
+import {Alert, Button, FlatList, Text, TextInput, View} from "react-native";
+import {useAuth} from "@/lib/context/AuthContext";
+import {TaskCategory, TaskPriority, TaskStatus} from "@/lib/constants/task";
+import {useTasks} from "@/lib/hooks/useTasks";
 import {Button, Text, TextInput, View} from "react-native";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  onAuthStateChanged
-} from "@firebase/auth";
-import {collection, getDocs, getFirestore} from "@firebase/firestore";
-import app from "@/app/config/firebaseConfig";
 import {useEffect, useState} from "react";
 import * as Notifications from "expo-notifications";
 import {useNotifications} from "@/app/hooks/useNotification";
 
 
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-async function getCities(db) {
-  const citiesCol = collection(db, 'cities');
-  const citySnapshot = await getDocs(citiesCol);
-  const cityList = citySnapshot.docs.map(doc => doc.data());
-
-  return cityList;
-}
-
-
-// await getCities(db)
 
 
 export default function Index() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [user, setUser] = useState(null);
+  const { user, signIn, signUp, signOut } = useAuth()
+  const { tasks, addTask } = useTasks()
 
   const {scheduleNotificationAsync, cancelNotificationAsync, sendPushNotification, expoPushToken} = useNotifications();
 
-  useEffect(() => {
-    console.log(auth, 'auth <<<')
-    console.log(db, 'db <<<')
-    console.log(app, 'app <<<')
+  const [email, setEmail] = useState<string>('admin@admin.com');
+  const [password, setPassword] = useState<string>('123456');
 
-    // getCities(db).then()
-  }, [])
-
+  const [title, setTitle] = useState('');
   useEffect(() => {
     const configureNotificationsAsync = async () => {
       const { granted } = await Notifications.requestPermissionsAsync();
@@ -67,79 +44,25 @@ export default function Index() {
     });
   };
 
+  const handleAdd = async () => {
+    if (!user) return;
 
-  onAuthStateChanged(auth, (user) => {
-
-    console.log(user, 'onAuthStateChanged' )
-
-    if (user) {
-      // User is signed in, see docs for a list of available properties
-      // https://firebase.google.com/docs/reference/js/auth.user
-      const uid = user.uid;
-      // ...
-    } else {
-      // User is signed out
-      // ...
-    }
-  });
-
-  const signUp = async () => {
     try {
-      createUserWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-          // Signed up
-          const user = userCredential.user;
+      const id = await addTask({
+        title,
+        category: TaskCategory.Personal,
+        status: TaskStatus.NotStarted,
+        priority: TaskPriority.Medium,
+        scheduledAt: new Date(),
+        reminderEnabled: false,
+      });
 
-          console.log(user, 'user  createUserWithEmailAndPassword <<< ')
-
-          setUser(user);
-          // ...
-        })
-        .catch((error) => {
-          const errorCode = error.code;
-          const errorMessage = error.message;
-
-          console.log(error, 'error <<<')
-          // ..
-        });
-
-      // await auth().createUserWithEmailAndPassword(email, password);
-      // alert('User created!');
-    } catch (error) {
-      alert(error.message);
+      Alert.alert('✅ Task added', `ID: ${id}`);
+    } catch (err) {
+      console.error(err);
+      Alert.alert('❌ Failed to add task', (err as Error).message);
     }
   };
-
-  const signIn = async () => {
-    try {
-      signInWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-          // Signed in
-          const user = userCredential.user;
-
-          setUser(user);
-
-          // ...
-        })
-        .catch((error) => {
-          const errorCode = error.code;
-          const errorMessage = error.message;
-        });
-    } catch (error) {
-      alert(error.message);
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      await firebaseSignOut(auth);
-      setUser(null);
-      alert('User signed out!');
-    } catch (error) {
-      alert(error.message);
-    }
-  };
-
 
   return (
     <View
@@ -167,10 +90,28 @@ export default function Index() {
           onChangeText={setPassword}
           style={{ borderBottomWidth: 1, marginBottom: 20 }}
         />
-        <Button title="Sign Up" onPress={signUp} />
-        <Button title="Sign In" onPress={signIn} />
+        <Button title="Sign Up" onPress={() => signUp(email, password)} />
+        <Button title="Sign In" onPress={() => signIn(email, password)} />
         <Button title="Sign Out" onPress={signOut} />
         {user && <Text>Welcome, {user.email}</Text>}
+
+        <TextInput
+          placeholder="Enter task title"
+          value={title}
+          onChangeText={setTitle}
+          style={{ borderWidth: 1, marginBottom: 12, padding: 8 }}
+        />
+        <Button title="Add Task" onPress={handleAdd} />
+
+        <FlatList
+          data={tasks}
+          keyExtractor={(item) => item.id!}
+          renderItem={({ item }) => <View>
+           <Text>
+             {JSON.stringify(item)}
+           </Text>
+          </View>}
+        />
         {<Text>expoPushToken, {expoPushToken}</Text>}
 
 
