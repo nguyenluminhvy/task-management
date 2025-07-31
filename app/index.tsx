@@ -1,24 +1,30 @@
-import {Alert, Button, FlatList, Text, TextInput, View} from "react-native";
+import {Alert, Button, FlatList, ScrollView, Text, TextInput, View} from "react-native";
 import {useAuth} from "@/lib/context/AuthContext";
 import {TaskCategory, TaskPriority, TaskStatus} from "@/lib/constants/task";
 import {useTasks} from "@/lib/hooks/useTasks";
 import {useEffect, useState} from "react";
 import * as Notifications from "expo-notifications";
 import {useNotifications} from "@/app/hooks/useNotification";
-
-
-
+import {PickDateButton} from "@/lib/components/PickDateButton";
+import moment from "moment";
+import {zeroOutSeconds} from "@/lib/utils/helper";
 
 export default function Index() {
   const { user, signIn, signUp, signOut } = useAuth()
-  const { tasks, addTask } = useTasks()
+  const { tasks, addTask, deleteTask, initScheduledNotifications } = useTasks()
 
   const {scheduleNotificationAsync, cancelNotificationAsync, sendPushNotification, expoPushToken} = useNotifications();
 
   const [email, setEmail] = useState<string>('admin@admin.com');
   const [password, setPassword] = useState<string>('123456');
+  const [scheduleLocal, setScheduleLocal] = useState([]);
+
+  const [startDate, setStartDate] = useState<Date>(moment().toDate());
+
 
   const [title, setTitle] = useState('');
+  const [reminderOffset, setReminderOffset] = useState('10');
+
   useEffect(() => {
     const configureNotificationsAsync = async () => {
       const { granted } = await Notifications.requestPermissionsAsync();
@@ -43,6 +49,51 @@ export default function Index() {
     });
   };
 
+  const getAllSchedule = async () => {
+    const data = await Notifications.getAllScheduledNotificationsAsync()
+
+    if (data?.length > 0) {
+
+
+      const list = data.map((item) => {
+        console.log(item, 'item')
+        console.log(item.trigger?.value, 'item.trigger?.value')
+        console.log(item.trigger?.seconds, 'item.trigger?.seconds')
+        console.log('======item======')
+
+        const targetTime = moment().add(item.trigger?.seconds, 'seconds');
+
+        console.log('targetTime: ', targetTime)
+
+        // const duration = moment.duration(item.trigger?.seconds, 'seconds');
+        const duration = moment.duration(targetTime, 'seconds');
+
+        const fromNow = moment(targetTime).fromNow()
+
+        console.log('fromNow: ', fromNow)
+
+        console.log(`In: ${Math.floor(duration.asMinutes())} minutes and ${Math.floor(duration.seconds())} seconds`);
+
+
+        return {
+          title: item?.identifier,
+          trigger: moment(item.trigger?.value).format("YYYY-MM-DD HH:mm:ss"),
+          seconds: moment(targetTime).format('YYYY-MM-DD HH:mm:ss'),
+        }
+      })
+
+      setScheduleLocal(list);
+
+      console.log(list, 'list getAllSchedule')
+
+
+    } else {
+      setScheduleLocal([]);
+    }
+
+    // console.log(data, 'data getAllSchedule')
+  }
+
   const handleAdd = async () => {
     if (!user) return;
 
@@ -52,11 +103,11 @@ export default function Index() {
         category: TaskCategory.Personal,
         status: TaskStatus.NotStarted,
         priority: TaskPriority.Medium,
-        scheduledAt: new Date(),
-        reminderEnabled: false,
+        scheduledAt: zeroOutSeconds(startDate),
+        reminderOffset: Number(reminderOffset),
       });
 
-      Alert.alert('✅ Task added', `ID: ${id}`);
+      // Alert.alert('✅ Task added', `ID: ${taskId}`);
     } catch (err) {
       console.error(err);
       Alert.alert('❌ Failed to add task', (err as Error).message);
@@ -64,11 +115,9 @@ export default function Index() {
   };
 
   return (
-    <View
+    <ScrollView
       style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
+        // flex: 1,
       }}
     >
       <Text>Edit app/index.tsx to edit this screen.</Text>
@@ -96,37 +145,94 @@ export default function Index() {
 
         <TextInput
           placeholder="Enter task title"
+          placeholderTextColor="blue"
           value={title}
           onChangeText={setTitle}
           style={{ borderWidth: 1, marginBottom: 12, padding: 8 }}
         />
-        <Button title="Add Task" onPress={handleAdd} />
+        <TextInput
+          placeholder="Enter task title"
+          placeholderTextColor="blue"
+          value={reminderOffset}
+          onChangeText={setReminderOffset}
+          style={{ borderWidth: 1, marginBottom: 12, padding: 8 }}
+        />
 
-        {<Text>expoPushToken, {expoPushToken}</Text>}
+        <PickDateButton
+          buttonColor={"#EEF5FD"}
+          textColor={"#006EE9"}
+          style={{
+            borderWidth: 0.5,
+            borderRadius: 12,
+            borderColor: "rgba(0,110,233,0.4)",
+          }}
+          dateDefault={startDate}
+          onDateChange={setStartDate}
+        ></PickDateButton>
+
+        <View>
+          <Text>{JSON.stringify(startDate)}</Text>
+          <Text>
+            {moment(startDate).format('YYYY-MM-DD HH:mm:ss')}
+          </Text>
+        </View>
+        <Button title="Add Task" onPress={handleAdd} />
+        <Button title="Get all task" onPress={getAllSchedule} />
+        <Button title="Init schedule all task" onPress={initScheduledNotifications} />
+
+        {/*{<Text>expoPushToken, {expoPushToken}</Text>}*/}
 
 
         <Button
           title="Send me a notification"
           onPress={sendNotification}
         ></Button>
-        <Button
-          title="Send me a notification 2222"
-          onPress={sendPushNotification}
-        ></Button>
-        <Button title="Cancel notification" onPress={cancelNotificationAsync} />
+        {/*<Button*/}
+        {/*  title="Send me a notification 2222"*/}
+        {/*  onPress={sendPushNotification}*/}
+        {/*></Button>*/}
+        {/*<Button title="Cancel notification" onPress={cancelNotificationAsync} />*/}
+
+
 
         <FlatList
           data={tasks}
           keyExtractor={(item) => item.id!}
-          renderItem={({ item }) => <View>
-           <Text>
-             {JSON.stringify(item)}
-           </Text>
+          renderItem={({ item }) => <View style={{
+            borderBottomWidth: 1,
+            flexDirection: 'row',
+          }}>
+
+        <View>
+          <Text>
+            {`id: ${item.id}`}
+          </Text>
+          <Text>
+            {`notificationId: ${item.notificationId}`}
+          </Text>
+          <Text>
+            {item.title}
+          </Text>
+          <Text>
+            {JSON.stringify(item.scheduledAt)}
+          </Text>
+          <Text>
+            {moment(item.scheduledAt).format('YYYY-MM-DD HH:mm:ss')}
+          </Text>
+          <Text>
+            {`reminderOffset: ${item.reminderOffset}`}
+          </Text>
+        </View>
+            <Button title="Delete Task" onPress={() => {deleteTask(item.id)}} />
           </View>}
         />
 
 
+        <Text>Schedule Local</Text>
+        <Text>{JSON.stringify(scheduleLocal)}</Text>
+
+
       </View>
-    </View>
+    </ScrollView>
   );
 }

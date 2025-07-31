@@ -1,17 +1,15 @@
-
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 import {
   addTask as _addTask,
   updateTask as _updateTask,
   deleteTask as _deleteTask,
-  Task
+  Task, getTasksCollectionRef
 } from '@/lib/services/taskService';
-import {useAuth} from "@/lib/context/AuthContext";
-import {FirestoreCollection} from "@/lib/constants/firestore";
-import {collection, onSnapshot, orderBy, Timestamp, where} from "firebase/firestore";
-import {db} from "@/lib/config/firebaseConfig";
-import {TaskCategory, TaskPriority, TaskStatus} from "@/lib/constants/task";
-import {query} from "@firebase/database";
+import { useAuth } from "@/lib/context/AuthContext";
+import {collection, getDocs, onSnapshot, orderBy, Timestamp, where} from "firebase/firestore";
+import { TaskCategory, TaskPriority, TaskStatus } from "@/lib/constants/task";
+import { query } from "@firebase/firestore";
+import * as Notifications from 'expo-notifications';
 
 export type TaskFilter = {
   status?: TaskStatus;
@@ -19,6 +17,40 @@ export type TaskFilter = {
   priority?: TaskPriority;
   scheduledAt?: Date;
 };
+
+function getReminderTime(task: Task): Date {
+  const offsetMs = (task.reminderOffset ?? 10) * 60 * 1000;
+
+  return new Date(task.scheduledAt.getTime() - (offsetMs));
+}
+
+async function scheduleNotificationForTask(task: Task): Promise<string> {
+  const triggerTime = getReminderTime(task);
+
+  const notificationId = await Notifications.scheduleNotificationAsync({
+    content: {
+      title: '🔔 Task Reminder',
+      body: task.title,
+      data: { taskId: task.id },
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: triggerTime
+    },
+  });
+
+  return notificationId;
+}
+
+async function cancelNotification(notificationId?: string) {
+  if (notificationId) {
+    try {
+      await Notifications.cancelScheduledNotificationAsync(notificationId);
+    } catch (e) {
+      console.warn("Failed to cancel notification:", e);
+    }
+  }
+}
 
 export function useTasks(filters?: TaskFilter) {
   const { user } = useAuth();
@@ -31,7 +63,7 @@ export function useTasks(filters?: TaskFilter) {
   useEffect(() => {
     if (!userId) return;
 
-    const taskRef = collection(db, FirestoreCollection.Users, userId, FirestoreCollection.Tasks);
+    const taskRef = getTasksCollectionRef(userId);
     const constraints = [];
 
     if (filters?.status) constraints.push(where('status', '==', filters.status));
@@ -50,12 +82,22 @@ export function useTasks(filters?: TaskFilter) {
     const q = query(taskRef, ...constraints);
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data: Task[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as Task),
-        scheduledAt: doc.data().scheduledAt.toDate(),
-        createdAt: doc.data().createdAt?.toDate(),
-      }));
+      // const data: Task[] = snapshot.docs.map((doc) => ({
+      //   id: doc.id,
+      //   ...(doc.data() as Task),
+      //   scheduledAt: doc.data().scheduledAt.toDate(),
+      //   createdAt: doc.data().createdAt?.toDate(),
+      // }));
+      const data: Task[] = snapshot.docs.map((doc) => {
+        console.log(doc.data(), 'doc.data()')
+        console.log(JSON.stringify(doc.data().scheduledAt.toDate()), 'doc.data().scheduledAt.toDate()')
+        return {
+          id: doc.id,
+          ...(doc.data() as Task),
+          scheduledAt: doc.data().scheduledAt.toDate(),
+          createdAt: doc.data().createdAt?.toDate(),
+        }
+      });
       setTasks(data);
       setLoading(false);
     });
@@ -67,7 +109,11 @@ export function useTasks(filters?: TaskFilter) {
   const addTask = async (task: Task): Promise<string | null> => {
     try {
       setLoading(true);
-      const taskId = await _addTask(userId, task);
+      const notificationId = await scheduleNotificationForTask(task);
+      const taskId = await _addTask(userId, {
+        ...task,
+        notificationId,
+      });
       return taskId;
     } catch (error) {
       console.error('Failed to add task', error);
@@ -80,7 +126,27 @@ export function useTasks(filters?: TaskFilter) {
   const updateTask = async (taskId: string, data: Partial<Task>): Promise<boolean> => {
     try {
       setLoading(true);
-      await _updateTask(userId, taskId, data);
+
+      const oldTask = tasks.find(t => t.id === taskId);
+      if (!oldTask) return false;
+
+      // Hủy thông báo cũ nếu có
+      await cancelNotification(oldTask.notificationId);
+
+      // Lên lịch lại nếu có scheduledAt mới
+      const mergedTask: Task = {
+        ...oldTask,
+        ...data,
+        id: taskId,
+      };
+
+      const newNotificationId = await scheduleNotificationForTask(mergedTask);
+
+      await _updateTask(userId, taskId, {
+        ...data,
+        notificationId: newNotificationId,
+      });
+
       return true;
     } catch (error) {
       console.error('Failed to update task', error);
@@ -93,6 +159,10 @@ export function useTasks(filters?: TaskFilter) {
   const deleteTask = async (taskId: string): Promise<boolean> => {
     try {
       setLoading(true);
+      const task = tasks.find(t => t.id === taskId);
+      if (task?.notificationId) {
+        await cancelNotification(task.notificationId);
+      }
       await _deleteTask(userId, taskId);
       return true;
     } catch (error) {
@@ -103,11 +173,47 @@ export function useTasks(filters?: TaskFilter) {
     }
   };
 
+
+  const getTasksOnce = async (): Promise<Task[]> => {
+    try {
+      const snapshot = await getDocs(getTasksCollectionRef(userId));
+
+      const tasks: Task[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        scheduledAt: doc.data().scheduledAt?.toDate(),
+        createdAt: doc.data().createdAt?.toDate(),
+      })) as Task[];
+
+      return tasks;
+    } catch (error) {
+      console.error('Error getting tasks:', error);
+      return [];
+    }
+  };
+
+  const initScheduledNotifications = async () => {
+    const tasks = await getTasksOnce()
+
+    for (const task of tasks) {
+      if (task?.id) {
+        await updateTask(task.id, task);
+      }
+    }
+  }
+
+  const cancelAllScheduledNotifications = async () => {
+    await Notifications.cancelAllScheduledNotificationsAsync()
+  }
+
   return {
     addTask,
     updateTask,
     deleteTask,
+    initScheduledNotifications,
+    cancelAllScheduledNotifications,
+
     loading,
-    tasks
+    tasks,
   };
 }

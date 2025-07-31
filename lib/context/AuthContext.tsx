@@ -15,6 +15,7 @@ import {
 import {signOut as firebaseSignOut} from "@firebase/auth";
 import {createUserProfile} from "@/lib/services/userService";
 import app from "@/lib/config/firebaseConfig";
+import {useTasks} from "@/lib/hooks/useTasks";
 
 const auth = getAuth(app);
 
@@ -40,6 +41,8 @@ const defaultContext: AuthContextType = {
 const AuthContext = createContext<AuthContextType>(defaultContext);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const { cancelAllScheduledNotifications, initScheduledNotifications } = useTasks()
+
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -53,6 +56,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    console.log('runn')
+
     setLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -87,6 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
+      await cancelAllScheduledNotifications();
       await firebaseSignOut(auth);
       setUser(null);
       alert('User signed out!');
