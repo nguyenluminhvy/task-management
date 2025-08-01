@@ -22,7 +22,7 @@ const auth = getAuth(app);
 type AuthContextType = {
   user: User | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<boolean>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -30,8 +30,7 @@ type AuthContextType = {
 const defaultContext: AuthContextType = {
   user: null,
   loading: true,
-  signIn: async () => {
-  },
+  signIn: async () => false,
   signUp: async () => {
   },
   signOut: async () => {
@@ -64,6 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (userCredential.user) {
         setUser(userCredential.user);
+        return true;
       }
     } catch (err) {
       console.error('❌ Sign in error:', err);
