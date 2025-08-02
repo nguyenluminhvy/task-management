@@ -32,6 +32,49 @@ const CATEGORY_BUTTONS = [
   },
 ];
 
+const REMIND_BEFORE_BUTTONS = [
+  {
+    label: "5 minutes",
+    value: 5,
+  },{
+    label: "10 minutes",
+    value: 10,
+  },{
+    label: "15 minutes",
+    value: 15,
+  },
+];
+
+const STATUS_BUTTONS = [
+  {
+    label: "Not Started",
+    type: TaskStatus.NotStarted,
+  },
+  {
+    label: "In Progress",
+    type: TaskStatus.InProgress,
+  },
+  {
+    label: "Completed",
+    type: TaskStatus.Completed,
+  },
+];
+
+const PRIORITY_BUTTONS = [
+  {
+    label: "Low",
+    type: TaskPriority.Low,
+  },
+  {
+    label: "Medium",
+    type: TaskPriority.Medium,
+  },
+  {
+    label: "High",
+    type: TaskPriority.High,
+  },
+];
+
 export default function TaskScreen(props: any) {
   const { taskId } = useLocalSearchParams();
   const isEditMode = taskId !== "new";
@@ -45,19 +88,16 @@ export default function TaskScreen(props: any) {
     id: undefined,
     title: "",
     description: "",
-    category: TaskCategory.Personal,
-    status: TaskStatus.NotStarted,
-    priority: TaskPriority.Medium,
+    category: undefined,
+    status: undefined,
+    priority: undefined,
     scheduledAt: moment().toDate(),
-    reminderOffset: 10,
+    reminderOffset: 0,
     notificationId: undefined,
     createdAt: undefined,
   });
 
   const [startDate, setStartDate] = React.useState<Date>(moment().toDate());
-  const [endDate, setEndDate] = React.useState<Date>(
-    moment().add(7, "days").toDate(),
-  );
 
   useEffect(() => {
     (async () => {
@@ -66,9 +106,15 @@ export default function TaskScreen(props: any) {
 
         if (data) {
           setTask(data)
+        } else {
+          setTask(prev => ({
+            ...prev,
+            category: TaskCategory.Personal,
+            status: TaskStatus.NotStarted,
+            priority: TaskPriority.Medium,
+            reminderOffset: 10,
+          }))
         }
-
-        console.log("data getTaskDetail: ", data)
       }
     })();
   }, [taskId]);
@@ -81,8 +127,8 @@ export default function TaskScreen(props: any) {
         title: task.title,
         description: task.description,
         category: task.category,
-        status: TaskStatus.NotStarted,
-        priority: TaskPriority.Medium,
+        status: task.status,
+        priority: task.priority,
         scheduledAt: zeroOutSeconds(startDate),
         reminderOffset: Number(task.reminderOffset),
       }
@@ -172,22 +218,23 @@ export default function TaskScreen(props: any) {
             gap: 20,
           }}
         >
-          {isEditMode && (
-            <Text
-              variant={"headlineLarge"}
-              style={{
-                color: "#006EE9",
-                fontWeight: "bold",
-                textAlign: "center",
-              }}
-            >
-              Title
-            </Text>
-          )}
+          {/*{isEditMode && (*/}
+          {/*  <Text*/}
+          {/*    variant={"headlineLarge"}*/}
+          {/*    style={{*/}
+          {/*      color: "#006EE9",*/}
+          {/*      fontWeight: "bold",*/}
+          {/*      textAlign: "center",*/}
+          {/*    }}*/}
+          {/*  >*/}
+          {/*    Title*/}
+          {/*  </Text>*/}
+          {/*)}*/}
 
           <View
             style={{
-              marginTop: isEditMode ? 8 : 20,
+              // marginTop: isEditMode ? 8 : 20,
+              marginTop:  20,
               flexDirection: "row",
               gap: 16,
             }}
@@ -206,13 +253,15 @@ export default function TaskScreen(props: any) {
                 }}
                 dateDefault={startDate}
                 onDateChange={setStartDate}
-              ></PickDateButton>
+              />
             </View>
 
             <View style={{ flex: 1, gap: 8 }}>
-              <Text style={{ color: "#006EE9", fontWeight: "bold" }}>Ends</Text>
+              <Text style={{ color: "#006EE9", fontWeight: "bold" }}>Time</Text>
 
               <PickDateButton
+                calendarMode={'time'}
+                format={'HH:mm'}
                 buttonColor={"#fff"}
                 textColor={"#006EE9"}
                 style={{
@@ -220,9 +269,9 @@ export default function TaskScreen(props: any) {
                   borderRadius: 12,
                   borderColor: "rgba(0,110,233,0.4)",
                 }}
-                dateDefault={endDate}
-                onDateChange={setEndDate}
-              ></PickDateButton>
+                dateDefault={startDate}
+                onDateChange={setStartDate}
+              />
             </View>
           </View>
 
@@ -304,6 +353,108 @@ export default function TaskScreen(props: any) {
                     textColor={isActive ? "white" : "black"}
                     onPress={() => {
                       setTask(prev => ({ ...prev, category: button.type }));
+                    }}
+                  >
+                    {button.label}
+                  </Button>
+                );
+              })}
+            </View>
+          </View>
+
+          <View
+            style={{
+              gap: 8,
+            }}
+          >
+            <Text style={{ color: "#006EE9", fontWeight: "bold" }}>
+              Remind Before
+            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 8,
+              }}
+            >
+              {REMIND_BEFORE_BUTTONS.map((button, index) => {
+                const isActive = button.value === task.reminderOffset;
+
+                return (
+                  <Button
+                    key={index}
+                    mode="contained"
+                    buttonColor={isActive ? "#006EE9" : "#F4F9FF"}
+                    textColor={isActive ? "white" : "black"}
+                    onPress={() => {
+                      setTask(prev => ({ ...prev, reminderOffset: button.value }));
+                    }}
+                  >
+                    {button.label}
+                  </Button>
+                );
+              })}
+            </View>
+          </View>
+
+          <View
+            style={{
+              gap: 8,
+            }}
+          >
+            <Text style={{ color: "#006EE9", fontWeight: "bold" }}>
+              Status
+            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 8,
+              }}
+            >
+              {STATUS_BUTTONS.map((button, index) => {
+                const isActive = button.type === task.status;
+
+                return (
+                  <Button
+                    key={index}
+                    mode="contained"
+                    buttonColor={isActive ? "#006EE9" : "#F4F9FF"}
+                    textColor={isActive ? "white" : "black"}
+                    onPress={() => {
+                      setTask(prev => ({ ...prev, status: button.type }));
+                    }}
+                  >
+                    {button.label}
+                  </Button>
+                );
+              })}
+            </View>
+          </View>
+
+          <View
+            style={{
+              gap: 8,
+            }}
+          >
+            <Text style={{ color: "#006EE9", fontWeight: "bold" }}>
+              Priority
+            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 8,
+              }}
+            >
+              {PRIORITY_BUTTONS.map((button, index) => {
+                const isActive = button.type === task.priority;
+
+                return (
+                  <Button
+                    key={index}
+                    mode="contained"
+                    buttonColor={isActive ? "#006EE9" : "#F4F9FF"}
+                    textColor={isActive ? "white" : "black"}
+                    onPress={() => {
+                      setTask(prev => ({ ...prev, priority: button.type }));
                     }}
                   >
                     {button.label}

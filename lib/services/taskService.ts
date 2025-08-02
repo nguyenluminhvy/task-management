@@ -17,9 +17,9 @@ export type Task = {
   id?: string;
   title: string;
   description?: string;
-  category: TaskCategory;
-  status: TaskStatus;
-  priority: TaskPriority;
+  category?: TaskCategory;
+  status?: TaskStatus;
+  priority?: TaskPriority;
   scheduledAt: Date;
   reminderOffset: number;
   notificationId?: string;

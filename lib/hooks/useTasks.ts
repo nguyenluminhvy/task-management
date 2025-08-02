@@ -14,7 +14,7 @@ import * as Notifications from 'expo-notifications';
 
 export type TaskFilter = {
   status?: TaskStatus;
-  category?: TaskCategory;
+  category?: TaskCategory | null;
   priority?: TaskPriority;
   scheduledAt?: Date;
 };

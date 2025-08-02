@@ -5,26 +5,24 @@ import { FlashList } from "@shopify/flash-list";
 import { TaskItem, TaskItemProps } from "@/lib/components/home/TaskItem";
 import { useRouter } from "expo-router";
 import { useTasks } from "@/lib/hooks/useTasks";
-// import { useCategories } from "@/lib/hooks/useCategories";
-
-enum TASK_TYPE {
-  PERSONAL = "PERSONAL",
-  STUDY = "STUDY",
-  WORK = "WORK",
-}
+import {TaskCategory} from "@/lib/constants/task";
 
 const BUTTONS = [
   {
+    label: "All",
+    type: null,
+  },
+  {
     label: "Personal",
-    type: TASK_TYPE.PERSONAL,
+    type: TaskCategory.Personal,
   },
   {
     label: "Study",
-    type: TASK_TYPE.STUDY,
+    type: TaskCategory.Study,
   },
   {
     label: "Work",
-    type: TASK_TYPE.WORK,
+    type: TaskCategory.Work,
   },
 ];
 
@@ -124,9 +122,11 @@ const DATA: TaskItemProps[] = [
 
 export default function HomeScreen() {
   const { push } = useRouter();
-  const [filterType, setFilterType] = useState<TASK_TYPE>(TASK_TYPE.PERSONAL);
+  const [filterType, setFilterType] = useState<TaskCategory | null>(null);
 
-  const { tasks, addTask, deleteTask, initScheduledNotifications } = useTasks()
+  const { tasks, addTask, deleteTask, initScheduledNotifications } = useTasks({
+    category: filterType
+  })
 
 
   // const fabStyle = { [animateFrom]: 16 };

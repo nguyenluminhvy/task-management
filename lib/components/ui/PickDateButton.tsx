@@ -7,6 +7,8 @@ import moment from "moment";
 export interface PickDateButtonProps extends ButtonProps {
   onDateChange: (date: Date) => void;
   dateDefault: Date | null;
+  calendarMode?: 'date' | 'time' | 'datetime'
+  format?: string
 }
 
 export function PickDateButton({
@@ -15,6 +17,8 @@ export function PickDateButton({
                                  style,
                                  dateDefault,
                                  onDateChange,
+                                 calendarMode = "date",
+                                 format = "MMM-DD-YYYY",
                                }: Partial<PickDateButtonProps>) {
   const [date, setDate] = useState(dateDefault || new Date());
   const [openPicker, setOpenPicker] = useState(false);
@@ -28,7 +32,7 @@ export function PickDateButton({
   return (
     <View>
       <Button
-        icon="calendar"
+        icon={calendarMode === "time" ? "clock" : "calendar"}
         mode="outlined"
         onPress={() => setOpenPicker(true)}
         buttonColor={buttonColor}
@@ -39,14 +43,14 @@ export function PickDateButton({
         }}
       >
         <Text style={{ color: "black" }}>
-          {moment(date).format("MMM-DD-YYYY")}
+          {moment(date).format(format)}
         </Text>
       </Button>
 
       <DatePicker
         modal
         open={openPicker}
-        mode={"datetime"}
+        mode={calendarMode}
         date={date}
         onConfirm={onChange}
         onCancel={() => {
