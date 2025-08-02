@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  getTask as _getTask,
   addTask as _addTask,
   updateTask as _updateTask,
   deleteTask as _deleteTask,
@@ -34,8 +35,11 @@ async function scheduleNotificationForTask(task: Task): Promise<string> {
       data: { taskId: task.id },
     },
     trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DATE,
-      date: triggerTime
+      // type: Notifications.SchedulableTriggerInputTypes.DATE,
+      // date: triggerTime,
+
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: 5
     },
   });
 
@@ -173,6 +177,10 @@ export function useTasks(filters?: TaskFilter) {
     }
   };
 
+  const getTaskDetail = async (taskId: string): Promise<Task | null> => {
+    return await _getTask(userId, taskId);
+  }
+
 
   const getTasksOnce = async (): Promise<Task[]> => {
     try {
@@ -207,6 +215,7 @@ export function useTasks(filters?: TaskFilter) {
   }
 
   return {
+    getTaskDetail,
     addTask,
     updateTask,
     deleteTask,

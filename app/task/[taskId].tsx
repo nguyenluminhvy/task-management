@@ -1,57 +1,105 @@
-import { Platform, View } from "react-native";
+import {Alert, Platform, View} from "react-native";
 import React, { useEffect, useState } from "react";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Text, IconButton, TextInput } from "react-native-paper";
-import { isIos } from "@/lib/utils/helper";
+import {isIos, zeroOutSeconds} from "@/lib/utils/helper";
 import { PickDateButton } from "@/lib/components/ui/PickDateButton";
 import moment from "moment";
 import {
   KeyboardAwareScrollView,
   KeyboardToolbar,
 } from "react-native-keyboard-controller";
-
-enum TASK_TYPE {
-  PERSONAL = "PERSONAL",
-  STUDY = "STUDY",
-  WORK = "WORK",
-}
+import {TaskCategory, TaskPriority, TaskStatus} from "@/lib/constants/task";
+import {useTasks} from "@/lib/hooks/useTasks";
+import {Task} from "@/lib/services/taskService";
 
 const CATEGORY_BUTTONS = [
   {
     label: "Personal",
-    type: TASK_TYPE.PERSONAL,
+    type: TaskCategory.Personal,
     iconName: "account",
   },
   {
     label: "Study",
-    type: TASK_TYPE.STUDY,
+    type: TaskCategory.Study,
     iconName: "pencil",
   },
   {
     label: "Work",
-    type: TASK_TYPE.WORK,
+    type: TaskCategory.Work,
     iconName: "bag-checked",
   },
 ];
 
-export default function TaskScreen() {
+export default function TaskScreen(props: any) {
   const { taskId } = useLocalSearchParams();
   const isEditMode = taskId !== "new";
+
+  const { getTaskDetail, addTask, updateTask, loading: taskLoading } = useTasks()
 
   const insets = useSafeAreaInsets();
   const bottom = isIos ? insets.bottom : 20;
 
-  const [title, setTitle] = React.useState("");
-  const [description, setDescription] = React.useState("");
-  const [categoryType, setCategoryType] = useState<TASK_TYPE>(
-    TASK_TYPE.PERSONAL,
-  );
+  const [task, setTask] = useState<Task>({
+    id: undefined,
+    title: "",
+    description: "",
+    category: TaskCategory.Personal,
+    status: TaskStatus.NotStarted,
+    priority: TaskPriority.Medium,
+    scheduledAt: moment().toDate(),
+    reminderOffset: 10,
+    notificationId: undefined,
+    createdAt: undefined,
+  });
 
   const [startDate, setStartDate] = React.useState<Date>(moment().toDate());
   const [endDate, setEndDate] = React.useState<Date>(
     moment().add(7, "days").toDate(),
   );
+
+  useEffect(() => {
+    (async () => {
+      if (taskId) {
+        const data = await getTaskDetail(taskId)
+
+        if (data) {
+          setTask(data)
+        }
+
+        console.log("data getTaskDetail: ", data)
+      }
+    })();
+  }, [taskId]);
+
+  const onUpdateTask = async () => {
+    try {
+      if (taskLoading) return
+
+      const data = {
+        title: task.title,
+        description: task.description,
+        category: task.category,
+        status: TaskStatus.NotStarted,
+        priority: TaskPriority.Medium,
+        scheduledAt: zeroOutSeconds(startDate),
+        reminderOffset: Number(task.reminderOffset),
+      }
+
+      if (isEditMode) {
+        await updateTask(taskId, data)
+      } else {
+        await addTask(data)
+      }
+
+      router.back()
+    } catch (err) {
+      console.error(err);
+      Alert.alert('❌ Failed to add task', (err as Error).message);
+    }
+  }
+
 
   return (
     <>
@@ -76,6 +124,7 @@ export default function TaskScreen() {
             ),
             headerRight: () => (
               <Button
+                loading={taskLoading}
                 mode="contained"
                 buttonColor={"#F4F9FF"}
                 textColor={"#006EE9"}
@@ -83,9 +132,7 @@ export default function TaskScreen() {
                 style={{
                   borderRadius: 12,
                 }}
-                onPress={() => {
-                  // setCategoryType(button.type);
-                }}
+                onPress={onUpdateTask}
               >
                 {isEditMode ? "Update" : "Create"}
               </Button>
@@ -187,13 +234,42 @@ export default function TaskScreen() {
             <Text style={{ color: "#006EE9", fontWeight: "bold" }}>Title</Text>
             <TextInput
               mode={"outlined"}
-              value={title}
-              onChangeText={(text) => setTitle(text)}
+              value={task.title}
+              onChangeText={(text) => setTask(prev => ({ ...prev, title: text }))}
               outlineColor={"rgba(0,110,233,0.4)"}
               activeOutlineColor={"rgba(0,110,233,0.4)"}
               style={{
                 backgroundColor: "white",
                 fontSize: 14,
+              }}
+              outlineStyle={{
+                borderWidth: 0.5,
+                borderRadius: 12,
+              }}
+            />
+          </View>
+
+          <View
+            style={{
+              gap: 8,
+            }}
+          >
+            <Text style={{ color: "#006EE9", fontWeight: "bold" }}>
+              Description
+            </Text>
+            <TextInput
+              mode={"outlined"}
+              multiline
+              value={task.description}
+              onChangeText={(text) => setTask(prev => ({ ...prev, description: text }))}
+              outlineColor={"rgba(0,110,233,0.4)"}
+              activeOutlineColor={"rgba(0,110,233,0.4)"}
+              style={{
+                backgroundColor: "white",
+                fontSize: 14,
+              }}
+              contentStyle={{
+                height: 160,
               }}
               outlineStyle={{
                 borderWidth: 0.5,
@@ -217,7 +293,7 @@ export default function TaskScreen() {
               }}
             >
               {CATEGORY_BUTTONS.map((button, index) => {
-                const isActive = button.type === categoryType;
+                const isActive = button.type === task.category;
 
                 return (
                   <Button
@@ -227,7 +303,7 @@ export default function TaskScreen() {
                     buttonColor={isActive ? "#006EE9" : "#F4F9FF"}
                     textColor={isActive ? "white" : "black"}
                     onPress={() => {
-                      setCategoryType(button.type);
+                      setTask(prev => ({ ...prev, category: button.type }));
                     }}
                   >
                     {button.label}
@@ -235,35 +311,6 @@ export default function TaskScreen() {
                 );
               })}
             </View>
-          </View>
-
-          <View
-            style={{
-              gap: 8,
-            }}
-          >
-            <Text style={{ color: "#006EE9", fontWeight: "bold" }}>
-              Description
-            </Text>
-            <TextInput
-              mode={"outlined"}
-              multiline
-              value={description}
-              onChangeText={(text) => setDescription(text)}
-              outlineColor={"rgba(0,110,233,0.4)"}
-              activeOutlineColor={"rgba(0,110,233,0.4)"}
-              style={{
-                backgroundColor: "white",
-                fontSize: 14,
-              }}
-              contentStyle={{
-                height: 160,
-              }}
-              outlineStyle={{
-                borderWidth: 0.5,
-                borderRadius: 12,
-              }}
-            />
           </View>
 
           <View style={{ flex: 1, backgroundColor: "blue" }}></View>

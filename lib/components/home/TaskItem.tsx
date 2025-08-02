@@ -3,6 +3,8 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { IconButton, MD3Colors, Switch, Text, Icon } from "react-native-paper";
 import React, { useCallback } from "react";
 import { useRouter } from "expo-router";
+import {useTasks} from "@/lib/hooks/useTasks";
+import {Task} from "@/lib/services/taskService";
 
 export type TaskItemProps = {
   id: number;
@@ -12,9 +14,10 @@ export type TaskItemProps = {
   status: boolean;
 };
 
-export function TaskItem({ id, title, time, type, status }: TaskItemProps) {
+export function TaskItem({ id, title }: Task) {
   const { push } = useRouter();
   const [turnOff, setTurnOff] = React.useState(false);
+  const { deleteTask } = useTasks()
 
   const onEdit = useCallback(() => {
     push({
@@ -23,7 +26,7 @@ export function TaskItem({ id, title, time, type, status }: TaskItemProps) {
         taskId: id,
       },
     });
-  }, []);
+  }, [id, push]);
 
   return (
     <TouchableOpacity
@@ -94,15 +97,30 @@ export function TaskItem({ id, title, time, type, status }: TaskItemProps) {
             style={{ fontWeight: "light" }}
           >{`2 Days ago`}</Text>
 
-          <IconButton
-            icon={turnOff ? "bell-off" : "bell"}
-            mode={"contained"}
-            iconColor={"#006EE9"}
-            containerColor={"#F4F9FF"}
-            size={16}
-            animated
-            onPress={() => setTurnOff(!turnOff)}
-          />
+          <View style={{
+            flexDirection: 'row'
+          }}>
+            <IconButton
+              icon={turnOff ? "bell-off" : "bell"}
+              mode={"contained"}
+              iconColor={"#006EE9"}
+              containerColor={"#F4F9FF"}
+              size={16}
+              animated
+              onPress={() => setTurnOff(!turnOff)}
+            />
+            <IconButton
+              icon={"trash-can"}
+              mode={"contained"}
+              iconColor={"red"}
+              containerColor={"#F4F9FF"}
+              size={16}
+              animated
+              onPress={() => deleteTask(id)}
+            />
+          </View>
+
+
         </View>
       </View>
     </TouchableOpacity>
