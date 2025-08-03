@@ -105,7 +105,7 @@ export default function Index() {
       const id = await addTask({
         title,
         category: TaskCategory.Personal,
-        status: TaskStatus.NotStarted,
+        status: TaskStatus.Todo,
         priority: TaskPriority.Medium,
         scheduledAt: zeroOutSeconds(startDate),
         reminderOffset: Number(reminderOffset),

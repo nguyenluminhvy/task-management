@@ -47,8 +47,8 @@ const REMIND_BEFORE_BUTTONS = [
 
 const STATUS_BUTTONS = [
   {
-    label: "Not Started",
-    type: TaskStatus.NotStarted,
+    label: "To do",
+    type: TaskStatus.Todo,
   },
   {
     label: "In Progress",
@@ -110,7 +110,7 @@ export default function TaskScreen(props: any) {
           setTask(prev => ({
             ...prev,
             category: TaskCategory.Personal,
-            status: TaskStatus.NotStarted,
+            status: TaskStatus.Todo,
             priority: TaskPriority.Medium,
             reminderOffset: 10,
           }))
