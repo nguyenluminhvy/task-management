@@ -8,7 +8,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { isIos } from "@/lib/utils/helper";
 
 export default function Index() {
-  const { push } = useRouter();
+  const { push, navigate } = useRouter();
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -58,7 +58,7 @@ export default function Index() {
             height: 52,
           }}
           onPress={() => {
-            push("/login");
+            navigate("/login");
           }}
         >
           Get Started

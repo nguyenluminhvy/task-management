@@ -10,9 +10,9 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  User,
+  User, sendEmailVerification,
 } from 'firebase/auth';
-import {signOut as firebaseSignOut} from "@firebase/auth";
+import {sendPasswordResetEmail, signOut as firebaseSignOut} from "@firebase/auth";
 import {createUserProfile} from "@/lib/services/userService";
 import app from "@/lib/config/firebaseConfig";
 import {useTasks} from "@/lib/hooks/useTasks";
@@ -22,9 +22,11 @@ const auth = getAuth(app);
 type AuthContextType = {
   user: User | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<boolean>;
+  signIn: (email: string, password: string) => Promise<boolean | any>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  reSendEmailVerification: () => Promise<void>;
+  sendEmailResetPassword: (email: string) => Promise<void>;
 };
 
 const defaultContext: AuthContextType = {
@@ -45,25 +47,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+
+      if (firebaseUser) {
+        setUser(firebaseUser);
+      }
       setLoading(false);
+
+      console.log('firebaseUser: ', firebaseUser)
+
     });
 
     return unsubscribe;
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    console.log('runn')
-
     setLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
       if (userCredential.user) {
-        setUser(userCredential.user);
-        return true;
+        if (userCredential.user?.emailVerified) {
+          setUser(userCredential.user);
+          return true;
+        } else {
+          setUser(userCredential.user);
+          return {
+            code: -1,
+            message: 'email is not verify'
+          }
+        }
       }
     } catch (err) {
       console.error('❌ Sign in error:', err);
@@ -81,6 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (user.uid) {
         await createUserProfile(user.uid, user.email ?? '', user.displayName ?? '');
+        await sendEmailVerification(user)
       }
     } catch (err) {
       console.error('❌ Sign up error:', err);
@@ -89,6 +105,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     }
   };
+
+  const reSendEmailVerification = async () => {
+    user && await sendEmailVerification(user)
+  }
+
+  const sendEmailResetPassword = async (email: string) => {
+    auth && await sendPasswordResetEmail(auth, email)
+  }
 
   const signOut = async () => {
     try {
@@ -106,6 +130,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     loading,
     signIn,
     signUp,
+    reSendEmailVerification,
+    sendEmailResetPassword,
     signOut
   };
 

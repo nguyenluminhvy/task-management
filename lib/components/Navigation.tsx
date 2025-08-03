@@ -5,6 +5,7 @@ export default function Navigation() {
     <Stack
       screenOptions={{
         headerBackTitle: "Back",
+        headerShadowVisible: false
       }}
     >
       <Stack.Screen
@@ -20,6 +21,33 @@ export default function Navigation() {
         name="login"
         options={{
           headerShown: false,
+          contentStyle: {
+            backgroundColor: "white",
+          },
+        }}
+      />
+      <Stack.Screen
+        name="register"
+        options={{
+          headerTitle: '',
+          contentStyle: {
+            backgroundColor: "white",
+          },
+        }}
+      />
+      <Stack.Screen
+        name="verify-account"
+        options={{
+          headerTitle: '',
+          contentStyle: {
+            backgroundColor: "white",
+          },
+        }}
+      />
+      <Stack.Screen
+        name="forgot-password"
+        options={{
+          headerTitle: '',
           contentStyle: {
             backgroundColor: "white",
           },
