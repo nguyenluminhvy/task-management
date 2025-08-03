@@ -21,8 +21,8 @@ export default function Index() {
   const {scheduleNotificationAsync, cancelNotificationAsync, sendPushNotification, expoPushToken} = useNotifications();
 
 
-  const [email, setEmail] = useState<string>('admin@admin.com');
-  const [password, setPassword] = useState<string>('123456');
+  const [email, setEmail] = useState<string>('vyuser005@yopmail.com');
+  const [password, setPassword] = useState<string>('12345678');
 
   return (
     <SafeAreaView style={{ flex: 1,  }}>

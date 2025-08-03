@@ -119,7 +119,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await cancelAllScheduledNotifications();
       await firebaseSignOut(auth);
       setUser(null);
-      alert('User signed out!');
     } catch (error) {
       alert(error.message);
     }

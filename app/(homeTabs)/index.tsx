@@ -6,6 +6,7 @@ import { TaskItem, TaskItemProps } from "@/lib/components/home/TaskItem";
 import { useRouter } from "expo-router";
 import { useTasks } from "@/lib/hooks/useTasks";
 import {TaskCategory} from "@/lib/constants/task";
+import {useAuth} from "@/lib/context/AuthContext";
 
 const BUTTONS = [
   {
@@ -28,7 +29,8 @@ const BUTTONS = [
 
 
 export default function HomeScreen() {
-  const { push } = useRouter();
+  const { push, dismissTo } = useRouter();
+  const { signOut } = useAuth()
   const [filterType, setFilterType] = useState<TaskCategory | null>(null);
 
   const { tasks, addTask, deleteTask, initScheduledNotifications } = useTasks({
@@ -53,18 +55,39 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Text
-        variant="titleLarge"
-        style={{ color: "#2E3A59", fontWeight: "bold" }}
-      >
-        Hello Rohan!
-      </Text>
-      <Text
-        variant="titleSmall"
-        style={{ fontWeight: "400", color: "#2E3A59" }}
-      >
-        Have a nice day.
-      </Text>
+      <View style={{ flexDirection: 'row', alignItems:'center', justifyContent: 'space-between'}}>
+        <View>
+          <Text
+            variant="titleLarge"
+            style={{ color: "#2E3A59", fontWeight: "bold" }}
+          >
+            Hello Rohan!
+          </Text>
+          <Text
+            variant="titleSmall"
+            style={{ fontWeight: "400", color: "#2E3A59" }}
+          >
+            Have a nice day.
+          </Text>
+        </View>
+
+        <View>
+          <Button
+            icon={'logout'}
+            mode="text"
+            contentStyle={{
+              flexDirection: 'row-reverse'
+            }}
+            textColor={'red'}
+            onPress={async () => {
+              await signOut();
+              dismissTo('/login')
+            }}
+          >
+            Logout
+          </Button>
+        </View>
+      </View>
 
       <View
         style={{

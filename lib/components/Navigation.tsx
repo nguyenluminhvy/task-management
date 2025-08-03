@@ -5,7 +5,8 @@ export default function Navigation() {
     <Stack
       screenOptions={{
         headerBackTitle: "Back",
-        headerShadowVisible: false
+        headerShadowVisible: false,
+        gestureEnabled: false,
       }}
     >
       <Stack.Screen
