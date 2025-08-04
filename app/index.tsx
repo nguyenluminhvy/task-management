@@ -1,14 +1,41 @@
 import { StyleSheet, View } from "react-native";
-import { Button, Text } from "react-native-paper";
+import {ActivityIndicator, Button, Text} from "react-native-paper";
 
 import { Image } from "expo-image";
 import { IMAGES } from "@/lib/assets/images";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { isIos } from "@/lib/utils/helper";
+import {useEffect, useState} from "react";
+import {getAuth, onAuthStateChanged} from "firebase/auth";
 
 export default function Index() {
   const { push, navigate } = useRouter();
+
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const auth = getAuth();
+    const subscriber = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        navigate('/(homeTabs)')
+      } else {
+        setLoading(false)
+      }
+    });
+
+    // Unsubscribe on unmount to prevent memory leaks
+    return subscriber;
+  }, []); // Empty dependency array ensures it runs once on mount
+
+  if (loading) {
+    return (
+      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 4 }}>
+        <ActivityIndicator size={'large'} animating={true} color={'#105CDB'} />
+        <Text variant="titleSmall">Loading</Text>
+    </SafeAreaView>
+    )
+  }
 
   return (
     <SafeAreaView style={{ flex: 1 }}>

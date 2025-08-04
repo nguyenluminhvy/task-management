@@ -11,11 +11,15 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   User, sendEmailVerification,
+  initializeAuth,
+  getReactNativePersistence
 } from 'firebase/auth';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import {sendPasswordResetEmail, signOut as firebaseSignOut} from "@firebase/auth";
 import {createUserProfile} from "@/lib/services/userService";
 import app from "@/lib/config/firebaseConfig";
-import {useTasks} from "@/lib/hooks/useTasks";
+import * as Notifications from "expo-notifications";
+
 
 const auth = getAuth(app);
 
@@ -42,7 +46,6 @@ const defaultContext: AuthContextType = {
 const AuthContext = createContext<AuthContextType>(defaultContext);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { cancelAllScheduledNotifications, initScheduledNotifications } = useTasks()
 
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -116,7 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
-      await cancelAllScheduledNotifications();
+      await Notifications.cancelAllScheduledNotificationsAsync()
       await firebaseSignOut(auth);
       setUser(null);
     } catch (error) {
