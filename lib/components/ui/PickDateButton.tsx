@@ -1,6 +1,6 @@
 import { View } from "react-native";
 import { Text, Button, ButtonProps } from "react-native-paper";
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import DatePicker from "react-native-date-picker";
 import moment from "moment";
 
@@ -22,6 +22,12 @@ export function PickDateButton({
                                }: Partial<PickDateButtonProps>) {
   const [date, setDate] = useState(dateDefault || new Date());
   const [openPicker, setOpenPicker] = useState(false);
+
+  useEffect(() => {
+    if (dateDefault) {
+      setDate(dateDefault)
+    }
+  }, [dateDefault])
 
   const onChange = (date: Date) => {
     setOpenPicker(false);

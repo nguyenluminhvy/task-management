@@ -11,6 +11,7 @@ import {IMAGES} from "@/lib/assets/images";
 import {isIos} from "@/lib/utils/helper";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {Button, Text} from "react-native-paper";
+import {AppTextInput} from "@/lib/components/ui/AppTextInput";
 
 export default function Index() {
   const { push } = useRouter();
@@ -68,21 +69,22 @@ export default function Index() {
             Login to your account
           </Text>
 
-
-          <TextInput
+          <AppTextInput
             autoCapitalize="none"
             placeholder="Email"
             value={email}
-            onChangeText={setEmail}
-            style={{ borderBottomWidth: 1, marginBottom: 10 }}
+            onChangeText={(value) => {
+              setEmail(value.trim())
+            }}
           />
-          <TextInput
+          <AppTextInput
             autoCapitalize="none"
-            placeholder="Password"
-            secureTextEntry
+            placeholder="Email"
             value={password}
-            onChangeText={setPassword}
-            style={{ borderBottomWidth: 1, marginBottom: 20 }}
+            secureTextEntry
+            onChangeText={(value) => {
+              setPassword(value.trim())
+            }}
           />
 
           <Text

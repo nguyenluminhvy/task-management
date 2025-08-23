@@ -33,9 +33,11 @@ export default function HomeScreen() {
   const { signOut } = useAuth()
   const [filterType, setFilterType] = useState<TaskCategory | null>(null);
 
-  const { tasks, addTask, deleteTask, initScheduledNotifications } = useTasks({
+  const { tasks } = useTasks({
     category: filterType
   })
+
+
 
 
   // const fabStyle = { [animateFrom]: 16 };
@@ -119,12 +121,12 @@ export default function HomeScreen() {
       </View>
 
       <FlashList
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingVertical: 16, paddingBottom: 80 }}
-      keyExtractor={(item) => item.id.toString()}
-      data={tasks}
-      renderItem={({ item }) => <TaskItem {...item} />}
-      estimatedItemSize={200}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingVertical: 16, paddingBottom: 80 }}
+        keyExtractor={(item) => item.id.toString()}
+        data={tasks}
+        renderItem={({ item }) => <TaskItem {...item} />}
+        estimatedItemSize={200}
       />
 
       <AnimatedFAB

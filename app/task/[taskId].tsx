@@ -79,7 +79,7 @@ export default function TaskScreen(props: any) {
   const { taskId } = useLocalSearchParams();
   const isEditMode = taskId !== "new";
 
-  const { getTaskDetail, addTask, updateTask, loading: taskLoading } = useTasks()
+  const { getTaskDetail, addTask, updateTask, loading: taskLoading, loadAllSchedule } = useTasks()
 
   const insets = useSafeAreaInsets();
   const bottom = isIos ? insets.bottom : 20;
@@ -97,6 +97,7 @@ export default function TaskScreen(props: any) {
     createdAt: undefined,
   });
 
+
   const [startDate, setStartDate] = React.useState<Date>(moment().toDate());
 
   useEffect(() => {
@@ -106,6 +107,7 @@ export default function TaskScreen(props: any) {
 
         if (data) {
           setTask(data)
+          setStartDate(data.scheduledAt)
         } else {
           setTask(prev => ({
             ...prev,
@@ -138,6 +140,8 @@ export default function TaskScreen(props: any) {
       } else {
         await addTask(data)
       }
+
+      await loadAllSchedule()
 
       router.back()
     } catch (err) {

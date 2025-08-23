@@ -17,16 +17,24 @@ export type TaskFilter = {
   category?: TaskCategory | null;
   priority?: TaskPriority;
   scheduledAt?: Date;
+  range?: {
+    start: Date;
+    end: Date;
+  };
 };
 
-function getReminderTime(task: Task): Date {
+export function getReminderTime(task: Task): Date {
   const offsetMs = (task.reminderOffset ?? 10) * 60 * 1000;
 
   return new Date(task.scheduledAt.getTime() - (offsetMs));
 }
 
-async function scheduleNotificationForTask(task: Task): Promise<string> {
+async function scheduleNotificationForTask(task: Task): Promise<string | undefined> {
   const triggerTime = getReminderTime(task);
+
+  if (triggerTime.getTime() <= Date.now()) {
+    return
+  }
 
   const notificationId = await Notifications.scheduleNotificationAsync({
     content: {
@@ -35,11 +43,8 @@ async function scheduleNotificationForTask(task: Task): Promise<string> {
       data: { taskId: task.id },
     },
     trigger: {
-      // type: Notifications.SchedulableTriggerInputTypes.DATE,
-      // date: triggerTime,
-
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: 5
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: triggerTime,
     },
   });
 
@@ -60,49 +65,66 @@ export function useTasks(filters?: TaskFilter) {
   const { user } = useAuth();
 
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const [scheduleLocal, setScheduleLocal] = useState<Task[]>([]);
+
   const [loading, setLoading] = useState(false);
 
   const userId = user?.uid;
+
+  // useEffect(() => {
+  //   if (!userId) return;
+  //
+  //   const taskRef = getTasksCollectionRef(userId);
+  //   const q = query(taskRef, orderBy('scheduledAt', 'asc'));
+  //
+  //   const unsubscribe = onSnapshot(q, (snapshot) => {
+  //     const data: Task[] = snapshot.docs.map((doc) => ({
+  //       id: doc.id,
+  //       ...(doc.data() as Task),
+  //       scheduledAt: doc.data().scheduledAt.toDate(),
+  //       createdAt: doc.data().createdAt?.toDate(),
+  //     }));
+  //
+  //     // setAllTasks(data);
+  //     loadAllSchedule(data);
+  //     initScheduledNotifications(data);
+  //   });
+  //
+  //   return () => unsubscribe();
+  // }, [userId]);
 
   useEffect(() => {
     if (!userId) return;
 
     const taskRef = getTasksCollectionRef(userId);
-    const constraints = [];
-
-    if (filters?.status) constraints.push(where('status', '==', filters.status));
-    if (filters?.category) constraints.push(where('category', '==', filters.category));
-    if (filters?.priority) constraints.push(where('priority', '==', filters.priority));
-
-    if (filters?.scheduledAt) {
-      const start = Timestamp.fromDate(new Date(filters.scheduledAt.setHours(0, 0, 0, 0)));
-      const end = Timestamp.fromDate(new Date(filters.scheduledAt.setHours(23, 59, 59, 999)));
-      constraints.push(where('scheduledAt', '>=', start));
-      constraints.push(where('scheduledAt', '<=', end));
-    }
-
-    constraints.push(orderBy('scheduledAt', 'asc'));
-
-    const q = query(taskRef, ...constraints);
+    const q = query(taskRef, orderBy('scheduledAt', 'asc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      // const data: Task[] = snapshot.docs.map((doc) => ({
-      //   id: doc.id,
-      //   ...(doc.data() as Task),
-      //   scheduledAt: doc.data().scheduledAt.toDate(),
-      //   createdAt: doc.data().createdAt?.toDate(),
-      // }));
-      const data: Task[] = snapshot.docs.map((doc) => {
-        console.log(doc.data(), 'doc.data()')
-        console.log(JSON.stringify(doc.data().scheduledAt.toDate()), 'doc.data().scheduledAt.toDate()')
-        return {
-          id: doc.id,
-          ...(doc.data() as Task),
-          scheduledAt: doc.data().scheduledAt.toDate(),
-          createdAt: doc.data().createdAt?.toDate(),
-        }
-      });
-      setTasks(data);
+      const all: Task[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as Task),
+        scheduledAt: doc.data().scheduledAt.toDate(),
+        createdAt: doc.data().createdAt?.toDate(),
+      }));
+
+      setAllTasks(all); // lưu toàn bộ
+
+      // filter local theo filters
+      let filtered = [...all];
+      if (filters?.status) filtered = filtered.filter(t => t.status === filters.status);
+      if (filters?.category) filtered = filtered.filter(t => t.category === filters.category);
+      if (filters?.priority) filtered = filtered.filter(t => t.priority === filters.priority);
+
+      if (filters?.range) {
+        const start = new Date(filters.range.start.setHours(0,0,0,0));
+        const end   = new Date(filters.range.end.setHours(23,59,59,999));
+        filtered = filtered.filter(t =>
+          t.scheduledAt >= start && t.scheduledAt <= end
+        );
+      }
+
+      setTasks(filtered); // lưu kết quả filter hiển thị
       setLoading(false);
     });
 
@@ -127,11 +149,13 @@ export function useTasks(filters?: TaskFilter) {
     }
   };
 
-  const updateTask = async (taskId: string, data: Partial<Task>): Promise<boolean> => {
+  const updateTask = async (taskId: string, data: Partial<Task>, sourceTasks?: Task[]): Promise<boolean> => {
     try {
       setLoading(true);
 
-      const oldTask = tasks.find(t => t.id === taskId);
+      const taskArray = sourceTasks ?? tasks;
+
+      const oldTask = taskArray.find(t => t.id === taskId);
       if (!oldTask) return false;
 
       // Hủy thông báo cũ nếu có
@@ -145,6 +169,9 @@ export function useTasks(filters?: TaskFilter) {
       };
 
       const newNotificationId = await scheduleNotificationForTask(mergedTask);
+
+
+      console.log('newNotificationId: ', newNotificationId)
 
       await _updateTask(userId, taskId, {
         ...data,
@@ -200,14 +227,36 @@ export function useTasks(filters?: TaskFilter) {
     }
   };
 
+  const loadAllSchedule = async () => {
+    const sourceTasks = await getTasksOnce()
+
+    const data = await Notifications.getAllScheduledNotificationsAsync()
+
+    if (data?.length > 0 && sourceTasks?.length > 0) {
+      const listNew = sourceTasks?.filter((task) => {
+        return data.find((s) => s.identifier === task.notificationId)
+      })
+
+      setScheduleLocal(listNew);
+    } else {
+      console.log('run setScheduleLocal []')
+      setScheduleLocal([]);
+    }
+  }
+
+  // const initScheduledNotifications = async () => {
   const initScheduledNotifications = async () => {
     const tasks = await getTasksOnce()
 
+    if (!tasks.length) return
+
     for (const task of tasks) {
       if (task?.id) {
-        await updateTask(task.id, task);
+        await updateTask(task.id, task, tasks);
       }
     }
+
+    await loadAllSchedule()
   }
 
   const cancelAllScheduledNotifications = async () => {
@@ -219,10 +268,13 @@ export function useTasks(filters?: TaskFilter) {
     addTask,
     updateTask,
     deleteTask,
-    initScheduledNotifications,
+    loadAllSchedule,
     cancelAllScheduledNotifications,
+    getTasksOnce,
+    initScheduledNotifications,
 
     loading,
     tasks,
+    scheduleLocal,
   };
 }

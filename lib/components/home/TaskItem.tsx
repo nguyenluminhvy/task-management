@@ -3,8 +3,9 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { IconButton, MD3Colors, Switch, Text, Icon } from "react-native-paper";
 import React, { useCallback } from "react";
 import { useRouter } from "expo-router";
-import {useTasks} from "@/lib/hooks/useTasks";
+import {getReminderTime, useTasks} from "@/lib/hooks/useTasks";
 import {Task} from "@/lib/services/taskService";
+import moment from "moment";
 
 export type TaskItemProps = {
   id: number;
@@ -14,10 +15,12 @@ export type TaskItemProps = {
   status: boolean;
 };
 
-export function TaskItem({ id, title }: Task) {
+export function TaskItem({ id, title, scheduledAt, reminderOffset }: Task) {
   const { push } = useRouter();
   const [turnOff, setTurnOff] = React.useState(false);
   const { deleteTask } = useTasks()
+
+  const date = moment(getReminderTime({scheduledAt, reminderOffset} as Task)).format("HH:mm MMM-DD-YYYY")
 
   const onEdit = useCallback(() => {
     push({
@@ -95,7 +98,7 @@ export function TaskItem({ id, title }: Task) {
           <Text
             variant={"bodySmall"}
             style={{ fontWeight: "light" }}
-          >{`2 Days ago`}</Text>
+          >{date}</Text>
 
           <View style={{
             flexDirection: 'row'
