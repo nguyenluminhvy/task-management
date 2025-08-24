@@ -22,6 +22,7 @@ import {
 import {isIos} from "@/lib/utils/helper";
 // import { SVG_AUTH } from '@Assets/Images/Svg/Auth'
 // import { SVG_WALLET } from '@Assets/Images/Svg/Wallet'
+import { Icon, MD3Colors } from "react-native-paper";
 
 interface IInputProps extends RNTextInputProps {
   isMobileNumberInput?: boolean
@@ -131,15 +132,11 @@ export const AppTextInput = forwardRef<RNTextInput, IInputProps>(
             inputContainerStyle,
           ]}
         >
-          {/*{showSearchIcon && (*/}
-          {/*  <Icon*/}
-          {/*    containerStyle={{*/}
-          {/*      marginLeft: 12,*/}
-          {/*    }}*/}
-          {/*    name={'search'}*/}
-          {/*    color={'rgba(124, 127, 135, 1)'}*/}
-          {/*  />*/}
-          {/*)}*/}
+          {showSearchIcon && (
+            <View style={{marginLeft: 8}}>
+              <Icon source="text-search" color={MD3Colors.neutralVariant60} size={24} />
+            </View>
+          )}
           <RNTextInput
             ref={ref}
             editable
@@ -160,7 +157,7 @@ export const AppTextInput = forwardRef<RNTextInput, IInputProps>(
             dataDetectorTypes={'none'}
             {...inputProp}
           />
-          {/*{RightComponent}*/}
+          {RightComponent}
           {/*{rightText && (*/}
           {/*  <TouchableOpacity*/}
           {/*    style={{ paddingHorizontal: 12 }}*/}

@@ -19,6 +19,7 @@ export function PickDateButton({
                                  onDateChange,
                                  calendarMode = "date",
                                  format = "MMM-DD-YYYY",
+                                 disabled = false
                                }: Partial<PickDateButtonProps>) {
   const [date, setDate] = useState(dateDefault || new Date());
   const [openPicker, setOpenPicker] = useState(false);
@@ -38,6 +39,7 @@ export function PickDateButton({
   return (
     <View>
       <Button
+        disabled={disabled}
         icon={calendarMode === "time" ? "clock" : "calendar"}
         mode="outlined"
         onPress={() => setOpenPicker(true)}

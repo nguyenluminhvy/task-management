@@ -1,12 +1,15 @@
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { AnimatedFAB, Button, Chip, Switch, Text } from "react-native-paper";
+import {AnimatedFAB, Button, Chip, Icon, MD3Colors, Modal, Portal, Switch, Text} from "react-native-paper";
 import React, { useCallback, useEffect, useState } from "react";
 import { FlashList } from "@shopify/flash-list";
 import { TaskItem, TaskItemProps } from "@/lib/components/home/TaskItem";
 import { useRouter } from "expo-router";
 import { useTasks } from "@/lib/hooks/useTasks";
-import {TaskCategory} from "@/lib/constants/task";
+import {TaskCategory, TaskStatus} from "@/lib/constants/task";
 import {useAuth} from "@/lib/context/AuthContext";
+import {AppTextInput} from "@/lib/components/ui/AppTextInput";
+import {AdvancedFilterModal, AdvancedFilterValue} from "@/lib/components/AdvancedFilterModal";
+import moment from "moment/moment";
 
 const BUTTONS = [
   {
@@ -27,17 +30,35 @@ const BUTTONS = [
   },
 ];
 
-
 export default function HomeScreen() {
   const { push, dismissTo } = useRouter();
   const { signOut } = useAuth()
+
+
   const [filterType, setFilterType] = useState<TaskCategory | null>(null);
+  const [searchText, setSearchText] = useState('');
+  const [advancedFilterValue, setAdvancedFilterValue] = useState<AdvancedFilterValue>({
+    status: undefined,
+    priority: undefined,
+    range: undefined,
+  });
+
+  console.log('advancedFilterValue:', advancedFilterValue)
 
   const { tasks } = useTasks({
-    category: filterType
+    category: filterType,
+    priority: advancedFilterValue.priority,
+    status: advancedFilterValue.status,
+    range: advancedFilterValue.range
   })
 
-
+  const taskFiltered = tasks.filter(task => {
+    const text = searchText.toLowerCase().trim();
+    return (
+      task.title.toLowerCase().includes(text) ||
+      (task.description?.toLowerCase().includes(text) ?? false)
+    );
+  });
 
 
   // const fabStyle = { [animateFrom]: 16 };
@@ -57,7 +78,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={{ flexDirection: 'row', alignItems:'center', justifyContent: 'space-between'}}>
+      <View style={{ flexDirection: 'row', alignItems:'center', justifyContent: 'space-between', marginBottom: 16}}>
         <View>
           <Text
             variant="titleLarge"
@@ -91,12 +112,56 @@ export default function HomeScreen() {
         </View>
       </View>
 
+      <AppTextInput
+        showSearchIcon
+        autoCapitalize="none"
+        placeholder="Search task title"
+        value={searchText}
+        onChangeText={(value) => {
+          setSearchText(value)
+        }}
+        RightComponent={<AdvancedFilterModal value={advancedFilterValue} onChange={(data) => {
+          console.log(data, 'data AdvancedFilterModal');
+          setAdvancedFilterValue(data)
+        }}/>}
+      />
+
+      <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 4, paddingTop: 8}}>
+        {
+          advancedFilterValue.status && (
+            <Chip selectedColor={'white'} style={{
+              backgroundColor: '#006EE9'
+            }} onClose={() => {
+              setAdvancedFilterValue(prev => ({ ...prev, status: undefined }));
+            }}>{`Status: ${advancedFilterValue.status}`}</Chip>
+          )
+        }
+        {
+          advancedFilterValue.priority && (
+            <Chip selectedColor={'white'} style={{
+              backgroundColor: '#006EE9'
+            }} onClose={() => {
+              setAdvancedFilterValue(prev => ({ ...prev, priority: undefined }));
+            }}>{`Priority: ${advancedFilterValue.priority}`}</Chip>
+          )
+        }
+        {
+          advancedFilterValue.range && (
+            <Chip selectedColor={'white'} style={{
+              backgroundColor: '#006EE9'
+            }} onClose={() => {
+              setAdvancedFilterValue(prev => ({ ...prev, range: undefined }));
+            }}>{`from ${moment(advancedFilterValue.range.start).format("MMM-DD-YYYY")} to ${moment(advancedFilterValue.range.end).format("MMM-DD-YYYY")}`}</Chip>
+          )
+        }
+      </View>
+
       <View
         style={{
           flexDirection: "row",
           gap: 8,
-          marginTop: 24,
           paddingBottom: 8,
+          marginTop: 16
         }}
       >
         {BUTTONS.map((button, index) => {
@@ -124,7 +189,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingVertical: 16, paddingBottom: 80 }}
         keyExtractor={(item) => item.id.toString()}
-        data={tasks}
+        data={taskFiltered}
         renderItem={({ item }) => <TaskItem {...item} />}
         estimatedItemSize={200}
       />

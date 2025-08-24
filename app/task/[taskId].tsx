@@ -45,7 +45,7 @@ const REMIND_BEFORE_BUTTONS = [
   },
 ];
 
-const STATUS_BUTTONS = [
+export const STATUS_BUTTONS = [
   {
     label: "To do",
     type: TaskStatus.Todo,
@@ -60,7 +60,7 @@ const STATUS_BUTTONS = [
   },
 ];
 
-const PRIORITY_BUTTONS = [
+export const PRIORITY_BUTTONS = [
   {
     label: "Low",
     type: TaskPriority.Low,
