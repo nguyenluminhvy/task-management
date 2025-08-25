@@ -47,15 +47,12 @@ export default function ScheduleScreen(props: any) {
 
   const [scheduleLocal, setScheduleLocal] = useState<GroupedTasksByMonth>([]);
 
-
   useEffect(() => {
     initScheduledNotifications()
   }, []);
 
   useEffect(() => {
     const loadAllSchedule = async (sourceTasks: any) => {
-      // const sourceTasks = await getTasksOnce()
-
       const data = await Notifications.getAllScheduledNotificationsAsync()
 
       if (data?.length > 0 && sourceTasks?.length > 0) {
@@ -81,7 +78,6 @@ export default function ScheduleScreen(props: any) {
 
         <View style={{flexDirection: 'row', gap: 4}}>
           <Icon source="calendar" color={'#006EE9'} size={28} />
-
 
           <Text
             variant="titleLarge"

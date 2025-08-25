@@ -14,7 +14,6 @@ import {
   initializeAuth,
   getReactNativePersistence
 } from 'firebase/auth';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import {sendPasswordResetEmail, signOut as firebaseSignOut} from "@firebase/auth";
 import {createUserProfile} from "@/lib/services/userService";
 import app from "@/lib/config/firebaseConfig";
@@ -26,6 +25,7 @@ const auth = getAuth(app);
 type AuthContextType = {
   user: User | null;
   loading: boolean;
+  setLoading: any;
   signIn: (email: string, password: string) => Promise<boolean | any>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -35,12 +35,18 @@ type AuthContextType = {
 
 const defaultContext: AuthContextType = {
   user: null,
-  loading: true,
+  loading: false,
   signIn: async () => false,
   signUp: async () => {
   },
   signOut: async () => {
   },
+  reSendEmailVerification: async () => {
+  },
+  sendEmailResetPassword: async () => {
+  },
+  setLoading: async () => {
+  }
 };
 
 const AuthContext = createContext<AuthContextType>(defaultContext);
@@ -48,8 +54,7 @@ const AuthContext = createContext<AuthContextType>(defaultContext);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -110,26 +115,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const reSendEmailVerification = async () => {
-    user && await sendEmailVerification(user)
+    try {
+      setLoading(true);
+      user && await sendEmailVerification(user)
+    } catch (e) {
+    } finally {
+      setLoading(false);
+    }
   }
 
   const sendEmailResetPassword = async (email: string) => {
-    auth && await sendPasswordResetEmail(auth, email)
+    try {
+      setLoading(true);
+      auth && await sendPasswordResetEmail(auth, email)
+    } catch (e) {
+    } finally {
+      setLoading(false);
+    }
   }
 
   const signOut = async () => {
     try {
+      setLoading(true);
       await Notifications.cancelAllScheduledNotificationsAsync()
       await firebaseSignOut(auth);
       setUser(null);
     } catch (error) {
       alert(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const value: AuthContextType = {
     user,
     loading,
+    setLoading,
     signIn,
     signUp,
     reSendEmailVerification,

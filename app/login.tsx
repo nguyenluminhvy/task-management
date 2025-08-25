@@ -1,13 +1,7 @@
-import {Alert, FlatList, ScrollView, StyleSheet, TextInput, TouchableOpacity, View} from "react-native";
+import {StyleSheet, TouchableOpacity, View} from "react-native";
 import {useAuth} from "@/lib/context/AuthContext";
-import {TaskCategory, TaskPriority, TaskStatus} from "@/lib/constants/task";
-import {useTasks} from "@/lib/hooks/useTasks";
-import {useEffect, useState} from "react";
-import * as Notifications from "expo-notifications";
-import {useNotifications} from "@/lib/hooks/useNotification";
-import {router, useRouter} from "expo-router";
-import {Image} from "expo-image";
-import {IMAGES} from "@/lib/assets/images";
+import {useState} from "react";
+import {router} from "expo-router";
 import {isIos} from "@/lib/utils/helper";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {Button, Text} from "react-native-paper";
@@ -15,13 +9,7 @@ import {AppTextInput} from "@/lib/components/ui/AppTextInput";
 import {KeyboardAwareScrollView} from "react-native-keyboard-controller";
 
 export default function Index() {
-  const { push } = useRouter();
-  const { user, signIn, signUp, signOut } = useAuth()
-
-  const { tasks, addTask, deleteTask, initScheduledNotifications } = useTasks()
-
-  const {scheduleNotificationAsync, cancelNotificationAsync, sendPushNotification, expoPushToken} = useNotifications();
-
+  const { signIn } = useAuth()
 
   const [email, setEmail] = useState<string>('vyuser005@yopmail.com');
   const [password, setPassword] = useState<string>('12345678');

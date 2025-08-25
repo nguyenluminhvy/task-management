@@ -8,3 +8,9 @@ export function zeroOutSeconds (datetime: Date) {
 }
 
 export const isIos = Platform.OS === "ios";
+
+export function getEmailName(email: string): string {
+  if (!email) return '';
+
+  return email.split('@')[0];
+}

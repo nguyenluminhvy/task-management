@@ -256,7 +256,7 @@ export function useTasks(filters?: TaskFilter) {
       }
     }
 
-    await loadAllSchedule()
+    // await loadAllSchedule()
   }
 
   const cancelAllScheduledNotifications = async () => {

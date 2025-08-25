@@ -4,6 +4,7 @@ import {StatusBar} from "expo-status-bar";
 import {PaperProvider} from "react-native-paper";
 import {KeyboardProvider} from "react-native-keyboard-controller";
 import Navigation from "@/lib/components/Navigation";
+import {LoadingIndicator} from "@/lib/components/ui/LoadingIndicator";
 
 export default function RootLayout() {
   return (
@@ -13,6 +14,7 @@ export default function RootLayout() {
         <NotificationsProvider>
           <KeyboardProvider>
             <Navigation />
+            <LoadingIndicator />
           </KeyboardProvider>
         </NotificationsProvider>
       </AuthProvider>

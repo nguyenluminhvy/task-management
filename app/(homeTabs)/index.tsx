@@ -10,6 +10,7 @@ import {useAuth} from "@/lib/context/AuthContext";
 import {AppTextInput} from "@/lib/components/ui/AppTextInput";
 import {AdvancedFilterModal, AdvancedFilterValue} from "@/lib/components/AdvancedFilterModal";
 import moment from "moment/moment";
+import {getEmailName} from "@/lib/utils/helper";
 
 const BUTTONS = [
   {
@@ -32,7 +33,7 @@ const BUTTONS = [
 
 export default function HomeScreen() {
   const { push, dismissTo } = useRouter();
-  const { signOut } = useAuth()
+  const { signOut, user } = useAuth()
 
 
   const [filterType, setFilterType] = useState<TaskCategory | null>(null);
@@ -82,7 +83,7 @@ export default function HomeScreen() {
             variant="titleLarge"
             style={{ color: "#2E3A59", fontWeight: "bold" }}
           >
-            Hello Rohan!
+            {`Hello ${getEmailName(user?.email)} !`}
           </Text>
           <Text
             variant="titleSmall"
