@@ -17,7 +17,7 @@ export default function Index() {
   useEffect(() => {
     const auth = getAuth();
     const subscriber = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
+      if (currentUser && currentUser.emailVerified) {
         navigate('/(homeTabs)')
       } else {
         setLoading(false)

@@ -5,6 +5,7 @@ import {useRouter} from "expo-router";
 import {isIos} from "@/lib/utils/helper";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {Button, Text} from "react-native-paper";
+import {AppTextInput} from "@/lib/components/ui/AppTextInput";
 
 export default function Index() {
   const { replace } = useRouter();
@@ -68,13 +69,15 @@ export default function Index() {
           </View>
 
 
-          <TextInput
+          <AppTextInput
             autoCapitalize="none"
             placeholder="Email"
             value={email}
-            onChangeText={setEmail}
-            style={{ borderBottomWidth: 1, marginBottom: 10 }}
+            onChangeText={(value) => {
+              setEmail(value.trim())
+            }}
           />
+
 
           <Button
             mode="contained"
@@ -83,6 +86,7 @@ export default function Index() {
               width: "100%",
               borderRadius: 8,
               marginBottom: isIos ? 0 : 16,
+              marginTop: 16,
             }}
             contentStyle={{
               height: 52,

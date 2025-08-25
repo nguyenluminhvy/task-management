@@ -104,7 +104,6 @@ export default function Index() {
                     {
                       isNotVerify ? 'Your account is not verified' : `We has send the verification email to ${email}`
                     }
-
                   </Text>
 
                   <Text
@@ -154,8 +153,6 @@ export default function Index() {
                 </View>
               )
             }
-
-
           </View>
 
           <Button
