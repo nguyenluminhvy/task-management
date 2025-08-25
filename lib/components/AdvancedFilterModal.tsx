@@ -1,12 +1,11 @@
 import {TouchableOpacity, View} from "react-native";
-import {Text, Button, ButtonProps, Modal, Portal, Icon, MD3Colors, Switch} from "react-native-paper";
+import {Text, Button, Modal, Portal, Icon, MD3Colors} from "react-native-paper";
 import React, {useEffect, useState} from "react";
-import DatePicker from "react-native-date-picker";
 import moment from "moment";
 import {PRIORITY_BUTTONS, STATUS_BUTTONS} from "@/app/task/[taskId]";
 import {TaskPriority, TaskStatus} from "@/lib/constants/task";
 import {PickDateButton} from "@/lib/components/ui/PickDateButton";
-
+import {AppSwitch} from "@/lib/components/ui/AppSwitch";
 
 export type DateRange = {
   start: Date;
@@ -39,9 +38,7 @@ export function AdvancedFilterModal({ onChange, value }: AdvancedFilterModalProp
       end: moment().endOf('month').toDate(),
     }
   });
-  const [isSwitchOn, setIsSwitchOn] = useState(true);
-
-  console.log(isSwitchOn, 'isSwitchOn')
+  const [isSwitchOn, setIsSwitchOn] = useState(false);
 
   useEffect(() => {
     if (!value.range) {
@@ -52,7 +49,6 @@ export function AdvancedFilterModal({ onChange, value }: AdvancedFilterModalProp
     }
   }, [value]);
 
-  const onToggleSwitch = () => setIsSwitchOn(!isSwitchOn);
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
 
@@ -65,10 +61,20 @@ export function AdvancedFilterModal({ onChange, value }: AdvancedFilterModalProp
     hideModal()
   }
 
+  const onCancelFilter = () => {
+    hideModal()
+    setTimeout(() => {
+      setFilters(value)
+      if (!value.range) setIsSwitchOn(false);
+    }, 200)
+  }
+
+  const hasFilter = !!filters.status || !!filters.priority || isSwitchOn;
+
   return (
     <View>
       <TouchableOpacity style={{paddingRight: 12}} onPress={showModal}>
-        <Icon source="filter-outline" color={MD3Colors.neutralVariant60} size={24} />
+        <Icon source="filter-outline" color={hasFilter ? '#006EE9' : MD3Colors.neutralVariant60} size={24} />
       </TouchableOpacity>
 
       <Portal>
@@ -95,7 +101,7 @@ export function AdvancedFilterModal({ onChange, value }: AdvancedFilterModalProp
               Date range
             </Text>
 
-            <Switch value={isSwitchOn} onValueChange={onToggleSwitch} />
+            <AppSwitch value={isSwitchOn} onchange={setIsSwitchOn}/>
           </View>
 
 
@@ -240,7 +246,7 @@ export function AdvancedFilterModal({ onChange, value }: AdvancedFilterModalProp
                 flex: 1,
                 borderRadius: 12,
               }}
-              onPress={hideModal}
+              onPress={onCancelFilter}
             >
               {"Cancel"}
             </Button>

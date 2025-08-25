@@ -43,8 +43,6 @@ export default function HomeScreen() {
     range: undefined,
   });
 
-  console.log('advancedFilterValue:', advancedFilterValue)
-
   const { tasks } = useTasks({
     category: filterType,
     priority: advancedFilterValue.priority,
