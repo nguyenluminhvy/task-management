@@ -30,9 +30,9 @@ export default function StatsScreen(props: any) {
   const stats = useMemo(() => {
     const total = tasks.length;
     const counts = {
-      [TaskStatus.Todo]: tasks.filter((t) => t.status === TaskStatus.Todo).length,
-      [TaskStatus.InProgress]: tasks.filter((t) => t.status === TaskStatus.InProgress).length,
-      [TaskStatus.Completed]: tasks.filter((t) => t.status === TaskStatus.Completed).length,
+      [TaskStatus.Todo]: tasks.filter((t) => t.status === TaskStatus.Todo)?.length || 0,
+      [TaskStatus.InProgress]: tasks.filter((t) => t.status === TaskStatus.InProgress)?.length || 0,
+      [TaskStatus.Completed]: tasks.filter((t) => t.status === TaskStatus.Completed)?.length || 0,
     };
     return { total, counts };
   }, [tasks]);
@@ -60,6 +60,7 @@ export default function StatsScreen(props: any) {
       legendFontSize: 14,
     },
   ];
+
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: '#fff', paddingHorizontal: 16 }}>
@@ -95,7 +96,15 @@ export default function StatsScreen(props: any) {
         />
         <Card.Content>
           <Text>{stats.counts[TaskStatus.Todo]} Tasks</Text>
-          <ProgressBar progress={stats.counts[TaskStatus.Todo] / stats.total} color="#006EE9" style={{ marginTop: 8 }} />
+          <ProgressBar
+            progress={
+              stats.total > 0
+                ? stats.counts[TaskStatus.Todo] / stats.total
+                : 0
+            }
+            color="#006EE9"
+            style={{ marginTop: 8 }}
+          />
         </Card.Content>
       </Card>
 
@@ -107,10 +116,13 @@ export default function StatsScreen(props: any) {
         />
         <Card.Content>
           <Text>{stats.counts[TaskStatus.InProgress]} Tasks</Text>
-          <ProgressBar progress={stats.counts[TaskStatus.InProgress] / stats.total} color="#F59E0B" style={{ marginTop: 8 }} />
+          <ProgressBar progress={
+            stats.total > 0
+              ? stats.counts[TaskStatus.InProgress] / stats.total
+              : 0
+          } color="#F59E0B" style={{ marginTop: 8 }} />
         </Card.Content>
       </Card>
-
 
       <Card style={{ marginTop: 16, borderRadius: 16 }}>
         <Card.Title
@@ -119,18 +131,40 @@ export default function StatsScreen(props: any) {
         />
         <Card.Content>
           <Text>{stats.counts[TaskStatus.Completed]} Tasks</Text>
-          <ProgressBar progress={stats.counts[TaskStatus.Completed] / stats.total} color="#10B981" style={{ marginTop: 8 }} />
+          <ProgressBar progress={
+            stats.total > 0
+              ? stats.counts[TaskStatus.Completed] / stats.total
+              : 0
+          } color="#10B981" style={{ marginTop: 8 }} />
         </Card.Content>
       </Card>
 
 
       {/* Filter buttons */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 24 }}>
-        <Button mode="outlined" onPress={() => setCurrentMonth(moment(currentMonth).subtract(1, 'month'))}>
-          Prev
+        <Button
+          mode="contained"
+          buttonColor={"#F4F9FF"}
+          textColor={"#006EE9"}
+          contentStyle={{}}
+          style={{
+            borderRadius: 12,
+          }}
+          onPress={() => setCurrentMonth(moment(currentMonth).subtract(1, 'month'))}
+        >
+          {"Prev"}
         </Button>
-        <Button mode="outlined" onPress={() => setCurrentMonth(moment(currentMonth).add(1, 'month'))}>
-          Next
+        <Button
+          mode="contained"
+          buttonColor={"#F4F9FF"}
+          textColor={"#006EE9"}
+          contentStyle={{}}
+          style={{
+            borderRadius: 12,
+          }}
+          onPress={() => setCurrentMonth(moment(currentMonth).add(1, 'month'))}
+        >
+          {"Next"}
         </Button>
       </View>
     </ScrollView>
