@@ -115,15 +115,14 @@ export default function ScheduleScreen(props: any) {
             >
               {group.month}
             </Text>
-            <Text>
+            <View>
               {group.tasks.map((task) => (
                 <TaskItem key={task.id} {...task} />
               ))}
-            </Text>
+            </View>
           </View>
         ))}
       </ScrollView>
-
     </View>
   );
 }

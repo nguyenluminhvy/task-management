@@ -89,7 +89,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     } catch (err) {
-      console.error('❌ Sign in error:', err);
       throw err;
     } finally {
       setLoading(false);
@@ -107,7 +106,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await sendEmailVerification(user)
       }
     } catch (err) {
-      console.error('❌ Sign up error:', err);
       throw err;
     } finally {
       setLoading(false);

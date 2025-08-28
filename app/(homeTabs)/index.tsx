@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import {Alert, StyleSheet, TouchableOpacity, View} from "react-native";
 import {AnimatedFAB, Button, Chip, Icon, MD3Colors, Modal, Portal, Switch, Text} from "react-native-paper";
 import React, { useCallback, useEffect, useState } from "react";
 import { FlashList } from "@shopify/flash-list";
@@ -75,6 +75,32 @@ export default function HomeScreen() {
     });
   }, []);
 
+  const onLogout = () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to log out?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await signOut();
+              dismissTo("/login");
+            } catch (error) {
+              console.error("Logout failed:", error);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={{ flexDirection: 'row', alignItems:'center', justifyContent: 'space-between', marginBottom: 16}}>
@@ -101,10 +127,7 @@ export default function HomeScreen() {
               flexDirection: 'row-reverse'
             }}
             textColor={'red'}
-            onPress={async () => {
-              await signOut();
-              dismissTo('/login')
-            }}
+            onPress={onLogout}
           >
             Logout
           </Button>

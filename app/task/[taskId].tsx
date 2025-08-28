@@ -1,5 +1,5 @@
 import {Alert, Platform, View} from "react-native";
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Text, IconButton, TextInput } from "react-native-paper";
@@ -97,6 +97,11 @@ export default function TaskScreen(props: any) {
     createdAt: undefined,
   });
 
+  const [errorMessage, setErrorMessage] = useState<string>("");
+
+  const isError = useMemo(() => {
+    return !!errorMessage
+  }, [errorMessage])
 
   const [startDate, setStartDate] = React.useState<Date>(moment().toDate());
 
@@ -121,9 +126,32 @@ export default function TaskScreen(props: any) {
     })();
   }, [taskId]);
 
+  const checkValid = () => {
+    let message = ''
+
+    if (task?.title?.length < 6) {
+      message = 'Title must be at least 6 characters';
+    }
+
+    if (!task?.title) {
+      message = 'Title is required';
+    }
+
+    if (message) {
+      setErrorMessage(message);
+    } else {
+      setErrorMessage('')
+    }
+
+    return !message
+  }
+
   const onUpdateTask = async () => {
     try {
       if (taskLoading) return
+
+      const isValid = checkValid()
+      if (!isValid) return
 
       const data = {
         title: task.title,
@@ -136,9 +164,21 @@ export default function TaskScreen(props: any) {
       }
 
       if (isEditMode) {
-        await updateTask(taskId, data)
+        const response = await updateTask(taskId, data)
+        if (response === '-1') {
+          Alert.alert(
+            'Invalid Reminder',
+            'Reminder time must be set in the future.',
+            [
+              { text: 'OK', onPress: () => console.log('OK Pressed') }
+            ],
+            { cancelable: false }
+          );
+          return
+        }
       } else {
-        await addTask(data)
+        const id = await addTask(data)
+        if (!id) return
       }
 
       await loadAllSchedule()
@@ -289,8 +329,8 @@ export default function TaskScreen(props: any) {
               mode={"outlined"}
               value={task.title}
               onChangeText={(text) => setTask(prev => ({ ...prev, title: text }))}
-              outlineColor={"rgba(0,110,233,0.4)"}
-              activeOutlineColor={"rgba(0,110,233,0.4)"}
+              outlineColor={isError ? "rgba(234, 57, 67, 1)" : "rgba(0,110,233,0.4)"}
+              activeOutlineColor={isError ? "rgba(234, 57, 67, 1)" : "rgba(0,110,233,0.4)"}
               style={{
                 backgroundColor: "white",
                 fontSize: 14,
@@ -299,7 +339,19 @@ export default function TaskScreen(props: any) {
                 borderWidth: 0.5,
                 borderRadius: 12,
               }}
+              placeholder={'Task title'}
+              placeholderTextColor={"rgba(0,0,0,0.35)"}
             />
+            {
+              isError && (
+                <Text
+                  variant={'labelSmall'}
+                  style={{ color: 'rgba(234, 57, 67, 1)'}}
+                >
+                  {errorMessage}
+                </Text>
+              )
+            }
           </View>
 
           <View

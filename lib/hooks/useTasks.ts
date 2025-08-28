@@ -1,16 +1,18 @@
-import { useEffect, useState } from 'react';
+import {useEffect, useState} from 'react';
 import {
-  getTask as _getTask,
   addTask as _addTask,
-  updateTask as _updateTask,
   deleteTask as _deleteTask,
-  Task, getTasksCollectionRef
+  getTask as _getTask,
+  getTasksCollectionRef,
+  Task,
+  updateTask as _updateTask
 } from '@/lib/services/taskService';
-import { useAuth } from "@/lib/context/AuthContext";
-import {collection, getDocs, onSnapshot, orderBy, Timestamp, where} from "firebase/firestore";
-import { TaskCategory, TaskPriority, TaskStatus } from "@/lib/constants/task";
-import { query } from "@firebase/firestore";
+import {useAuth} from "@/lib/context/AuthContext";
+import {getDocs, onSnapshot, orderBy} from "firebase/firestore";
+import {TaskCategory, TaskPriority, TaskStatus} from "@/lib/constants/task";
+import {query} from "@firebase/firestore";
 import * as Notifications from 'expo-notifications';
+import {Alert} from "react-native";
 
 export type TaskFilter = {
   status?: TaskStatus;
@@ -30,25 +32,29 @@ export function getReminderTime(task: Task): Date {
 }
 
 async function scheduleNotificationForTask(task: Task): Promise<string | undefined> {
-  const triggerTime = getReminderTime(task);
+  try {
+    const triggerTime = getReminderTime(task);
 
-  if (triggerTime.getTime() <= Date.now()) {
-    return
+    if (triggerTime.getTime() <= Date.now()) {
+      return '-1'
+    }
+
+    const notificationId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '🔔 Task Reminder',
+        body: task.title,
+        data: { taskId: task.id },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: triggerTime,
+      },
+    });
+
+    return notificationId;
+  } catch (e) {
+    throw e
   }
-
-  const notificationId = await Notifications.scheduleNotificationAsync({
-    content: {
-      title: '🔔 Task Reminder',
-      body: task.title,
-      data: { taskId: task.id },
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DATE,
-      date: triggerTime,
-    },
-  });
-
-  return notificationId;
 }
 
 async function cancelNotification(notificationId?: string) {
@@ -136,11 +142,28 @@ export function useTasks(filters?: TaskFilter) {
     try {
       setLoading(true);
       const notificationId = await scheduleNotificationForTask(task);
-      const taskId = await _addTask(userId, {
-        ...task,
-        notificationId,
-      });
-      return taskId;
+
+      if (notificationId === '-1') {
+        Alert.alert(
+          'Invalid Reminder',
+          'Reminder time must be set in the future.',
+          [
+            { text: 'OK', onPress: () => console.log('OK Pressed') }
+          ],
+          { cancelable: false }
+        );
+        return null
+      }
+
+      if (notificationId) {
+        const taskId = await _addTask(userId, {
+          ...task,
+          notificationId,
+        });
+        return taskId;
+      }
+
+      return null
     } catch (error) {
       console.error('Failed to add task', error);
       return null;
@@ -149,7 +172,7 @@ export function useTasks(filters?: TaskFilter) {
     }
   };
 
-  const updateTask = async (taskId: string, data: Partial<Task>, sourceTasks?: Task[]): Promise<boolean> => {
+  const updateTask = async (taskId: string, data: Partial<Task>, sourceTasks?: Task[]): Promise<boolean | string> => {
     try {
       setLoading(true);
 
@@ -158,20 +181,19 @@ export function useTasks(filters?: TaskFilter) {
       const oldTask = taskArray.find(t => t.id === taskId);
       if (!oldTask) return false;
 
-      // Hủy thông báo cũ nếu có
       await cancelNotification(oldTask.notificationId);
 
-      // Lên lịch lại nếu có scheduledAt mới
       const mergedTask: Task = {
         ...oldTask,
         ...data,
         id: taskId,
       };
 
-      const newNotificationId = await scheduleNotificationForTask(mergedTask);
+      const isStatusCompleted = mergedTask.status === TaskStatus.Completed
 
+      const newNotificationId = !isStatusCompleted && await scheduleNotificationForTask(mergedTask);
 
-      console.log('newNotificationId: ', newNotificationId)
+      if (newNotificationId === '-1') return '-1';
 
       await _updateTask(userId, taskId, {
         ...data,

@@ -22,13 +22,14 @@ import {
 import {isIos} from "@/lib/utils/helper";
 // import { SVG_AUTH } from '@Assets/Images/Svg/Auth'
 // import { SVG_WALLET } from '@Assets/Images/Svg/Wallet'
-import { Icon, MD3Colors } from "react-native-paper";
+import { Text, Icon, MD3Colors } from "react-native-paper";
 
 interface IInputProps extends RNTextInputProps {
   isMobileNumberInput?: boolean
   isValid?: boolean | null
   isError?: boolean | null
   rightText?: string
+  errorMessage?: string | null
   RightComponent?: any
   rightTextStyle?: StyleProp<TextStyle>
   onRightTextPress?: () => void
@@ -187,16 +188,14 @@ export const AppTextInput = forwardRef<RNTextInput, IInputProps>(
           {/*)}*/}
         </Animated.View>
 
-        {/*{errorMessage?.length > 0 && (*/}
-        {/*  <AppText*/}
-        {/*    fontWeight={500}*/}
-        {/*    fontSize={FontSizes.small}*/}
-        {/*    color={'rgba(234, 57, 67, 1)'}*/}
-        {/*    style={{ marginTop: 8, marginLeft: 0 }}*/}
-        {/*  >*/}
-        {/*    {errorMessage}*/}
-        {/*  </AppText>*/}
-        {/*)}*/}
+        {errorMessage?.length > 0 && (
+          <Text
+            variant={'labelSmall'}
+            style={{ marginTop: 8, marginLeft: 0, color: 'rgba(234, 57, 67, 1)'}}
+          >
+            {errorMessage}
+          </Text>
+        )}
       </Animated.View>
     )
   }
