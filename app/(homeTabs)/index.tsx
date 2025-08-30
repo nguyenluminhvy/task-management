@@ -59,13 +59,6 @@ export default function HomeScreen() {
     );
   });
 
-
-  // const fabStyle = { [animateFrom]: 16 };
-  // const { data: categories } = useCategories();
-  // const { data: tasks } = useTasks(filterType);
-
-  // console.log(tasks, "tasks <<<");
-
   const onCreateTask = useCallback(() => {
     push({
       pathname: "/task/[taskId]",

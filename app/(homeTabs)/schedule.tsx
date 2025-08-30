@@ -1,4 +1,4 @@
-import {StyleSheet, View, Button, ScrollView} from "react-native";
+import {StyleSheet, View, Button, ScrollView, RefreshControl} from "react-native";
 import { Icon, Text} from "react-native-paper";
 import React, {useEffect, useState} from "react";
 import {getReminderTime, useTasks} from "@/lib/hooks/useTasks";
@@ -46,6 +46,15 @@ export default function ScheduleScreen(props: any) {
   const { tasks, initScheduledNotifications } = useTasks()
 
   const [scheduleLocal, setScheduleLocal] = useState<GroupedTasksByMonth>([]);
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    setTimeout(async () => {
+      await initScheduledNotifications();
+      setRefreshing(false);
+    }, 200);
+  }, [initScheduledNotifications]);
 
   useEffect(() => {
     initScheduledNotifications()
@@ -87,26 +96,16 @@ export default function ScheduleScreen(props: any) {
           </Text>
 
         </View>
-
-
       </View>
-      {/*{*/}
-      {/*  scheduleLocal?.length > 0 && (*/}
-      {/*    <FlashList*/}
-      {/*      showsVerticalScrollIndicator={false}*/}
-      {/*      contentContainerStyle={{ paddingVertical: 16, paddingBottom: 80 }}*/}
-      {/*      keyExtractor={(item) => item.id.toString()}*/}
-      {/*      data={scheduleLocal}*/}
-      {/*      renderItem={({ item }) => <TaskItem {...item} />}*/}
-      {/*      estimatedItemSize={200}*/}
-      {/*    />*/}
-      {/*  )*/}
-      {/*}*/}
 
-
-      <ScrollView contentContainerStyle={{gap: 16}} style={{
-        paddingTop: 20
-      }}>
+      <ScrollView
+        contentContainerStyle={{gap: 16}} style={{
+          paddingTop: 20
+        }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {scheduleLocal.map((group) => (
           <View key={group.month} style={{gap: 4}}>
             <Text
