@@ -10,8 +10,6 @@ import * as Notifications from "expo-notifications";
 import {Linking, Platform} from "react-native";
 
 import * as TaskManager from 'expo-task-manager';
-import Constants from 'expo-constants';
-import * as Device from 'expo-device';
 
 
 const BACKGROUND_NOTIFICATION_TASK = 'BACKGROUND-NOTIFICATION-TASK';
@@ -44,41 +42,6 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
   }),
 });
-
-function handleRegistrationError(errorMessage: string) {
-  alert(errorMessage);
-  throw new Error(errorMessage);
-}
-
-async function registerForPushNotificationsAsync() {
-  let token;
-
-  if (Platform.OS === 'android') {
-    Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF231F7C',
-    });
-  }
-
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
-
-  if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
-
-  if (finalStatus !== 'granted') {
-    alert('Không được cấp quyền nhận thông báo!');
-    return;
-  }
-
-  token = (await Notifications.getExpoPushTokenAsync()).data;
-  console.log("Expo Push Token:", token);
-  return token;
-}
 
 const NotificationsProvider: FC<PropsWithChildren> = ({ children }) => {
   const [expoPushToken, setExpoPushToken] = useState('');

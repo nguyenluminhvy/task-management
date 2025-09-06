@@ -1,12 +1,15 @@
-import {StyleSheet, View, Button, ScrollView, RefreshControl} from "react-native";
-import { Icon, Text} from "react-native-paper";
-import React, {useEffect, useState} from "react";
+import {StyleSheet, View, ScrollView, RefreshControl} from "react-native";
+import { Icon, Text, Button} from "react-native-paper";
+import React, {useCallback, useEffect, useState} from "react";
 import {getReminderTime, useTasks} from "@/lib/hooks/useTasks";
 import {TaskItem} from "@/lib/components/home/TaskItem";
 import {FlashList} from "@shopify/flash-list";
 import {Task} from "@/lib/services/taskService";
 import * as Notifications from "expo-notifications";
 import moment from "moment";
+import {Image} from "expo-image";
+import {IMAGES} from "@/lib/assets/images";
+import {useRouter} from "expo-router";
 
 type GroupedTasksByMonth = {
   month: string;
@@ -43,6 +46,8 @@ function groupTasksByMonth(tasks: Task[]) {
 }
 
 export default function ScheduleScreen(props: any) {
+  const { push } = useRouter();
+
   const { tasks, initScheduledNotifications } = useTasks()
 
   const [scheduleLocal, setScheduleLocal] = useState<GroupedTasksByMonth>([]);
@@ -79,7 +84,16 @@ export default function ScheduleScreen(props: any) {
     }
 
     if (tasks?.length > 0) loadAllSchedule(tasks)
-  }, [tasks]);
+  }, [tasks, refreshing]);
+
+  const onCreateTask = useCallback(() => {
+    push({
+      pathname: "/task/[taskId]",
+      params: {
+        taskId: "new",
+      },
+    });
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -97,6 +111,43 @@ export default function ScheduleScreen(props: any) {
 
         </View>
       </View>
+
+      {
+        scheduleLocal?.length === 0 && (
+          <View style={{
+            flex: 1,
+            paddingTop: 100,
+            alignItems: 'center',
+            gap: 8
+          }}>
+            <Image
+              style={{
+                width: "100%",
+                height: 50,
+              }}
+              source={IMAGES.nodata}
+              contentFit="contain"
+            />
+            <Text variant={'labelMedium'}>
+              No data
+            </Text>
+            <Button
+              style={{
+                borderRadius: 8,
+                borderWidth: 0.5,
+                borderColor: '#006EE9',
+                borderStyle: 'dashed'
+              }}
+              mode="contained"
+              buttonColor={"white"}
+              textColor={"#006EE9"}
+              onPress={onCreateTask}
+            >
+              + Create new task
+            </Button>
+          </View>
+        )
+      }
 
       <ScrollView
         contentContainerStyle={{gap: 16}} style={{

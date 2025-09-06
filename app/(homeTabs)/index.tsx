@@ -11,6 +11,8 @@ import {AppTextInput} from "@/lib/components/ui/AppTextInput";
 import {AdvancedFilterModal, AdvancedFilterValue} from "@/lib/components/AdvancedFilterModal";
 import moment from "moment/moment";
 import {getEmailName} from "@/lib/utils/helper";
+import {IMAGES} from "@/lib/assets/images";
+import {Image} from "expo-image";
 
 const BUTTONS = [
   {
@@ -201,6 +203,38 @@ export default function HomeScreen() {
       </View>
 
       <FlashList
+        ListEmptyComponent={<View style={{
+          flex: 1,
+          paddingTop: 100,
+          alignItems: 'center',
+          gap: 8
+        }}>
+          <Image
+            style={{
+              width: "100%",
+              height: 50,
+            }}
+            source={IMAGES.nodata}
+            contentFit="contain"
+          />
+          <Text variant={'labelMedium'}>
+            No data
+          </Text>
+          <Button
+            style={{
+              borderRadius: 8,
+              borderWidth: 0.5,
+              borderColor: '#006EE9',
+              borderStyle: 'dashed'
+            }}
+            mode="contained"
+            buttonColor={"white"}
+            textColor={"#006EE9"}
+            onPress={onCreateTask}
+          >
+            + Create new task
+          </Button>
+        </View>}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingVertical: 16, paddingBottom: 80 }}
         keyExtractor={(item) => item.id.toString()}

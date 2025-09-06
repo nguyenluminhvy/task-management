@@ -13,8 +13,8 @@ import {getFirebaseAdminErrorMessage} from "@/lib/utils/firebaseAdminErrors";
 export default function Index() {
   const { signIn } = useAuth()
 
-  const [email, setEmail] = useState<string>('vyuser005@yopmail.com');
-  const [password, setPassword] = useState<string>('12345678');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
   const [emailErrorMessage, setEmailErrorMessage] = useState('');
   const [passwordErrorMessage, setPasswordErrorMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
