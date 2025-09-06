@@ -1,4 +1,4 @@
-import {TouchableOpacity, View} from "react-native";
+import {Keyboard, TouchableOpacity, View} from "react-native";
 import {Text, Button, Modal, Portal, Icon, MD3Colors} from "react-native-paper";
 import React, {useEffect, useState} from "react";
 import moment from "moment";
@@ -49,7 +49,10 @@ export function AdvancedFilterModal({ onChange, value }: AdvancedFilterModalProp
     }
   }, [value]);
 
-  const showModal = () => setVisible(true);
+  const showModal = () => {
+    setVisible(true)
+    Keyboard.dismiss()
+  };
   const hideModal = () => setVisible(false);
 
   const onApplyFilter = () => {

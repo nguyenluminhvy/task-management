@@ -9,6 +9,7 @@ export const firebaseAdminErrorMessages: Record<string, string> = {
   "auth/invalid-email-verified": "The emailVerified value is invalid.",
   "auth/invalid-password": "The password is invalid (minimum 8 characters).",
   "auth/too-many-requests": "Too many requests. Please try again later.",
+  "auth/network-request-failed": "Network request failed",
 };
 
 export function getFirebaseAdminErrorMessage(code: string): string {
